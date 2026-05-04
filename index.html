@@ -1,0 +1,2220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#00c896">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FoodBowl">
+<title>Food Science Bowl</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0a0f0d;
+    --surface:  #111a16;
+    --border:   #1e2e26;
+    --accent:   #00c896;
+    --accent2:  #00ffb3;
+    --danger:   #ff4f5e;
+    --text:     #e8f5f0;
+    --muted:    #5a7a6e;
+    --font-d:   'Syne', sans-serif;
+    --font-m:   'JetBrains Mono', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-m);
+    overscroll-behavior: none;
+  }
+
+  /* ── noise texture overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── screens ── */
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
+
+  /* ══════════════════════════════
+     HOME SCREEN
+  ══════════════════════════════ */
+  #home {
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    gap: 0;
+  }
+
+  .home-tag {
+    font-family: var(--font-m);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.1s forwards;
+  }
+
+  .home-title {
+    font-family: var(--font-d);
+    font-size: clamp(2.8rem, 10vw, 5rem);
+    font-weight: 800;
+    line-height: 0.95;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.2s forwards;
+  }
+
+  .home-title span { color: var(--accent); }
+
+  .home-sub {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 3rem;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.3s forwards;
+  }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.4s forwards;
+  }
+
+  .cat-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, transform 0.1s;
+    color: var(--text);
+  }
+
+  .cat-btn:hover, .cat-btn.selected {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .cat-btn.selected { background: #0d1f18; }
+
+  .cat-icon { font-size: 1.4rem; margin-bottom: 0.4rem; }
+  .cat-name { font-family: var(--font-d); font-size: 0.85rem; font-weight: 700; }
+  .cat-count { font-size: 0.7rem; color: var(--muted); margin-top: 0.2rem; }
+
+  .start-btn {
+    width: 100%;
+    max-width: 420px;
+    padding: 1rem;
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font-d);
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0a0f0d;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.5s forwards;
+  }
+
+  .start-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+  .start-btn:active { transform: scale(0.98); }
+
+  /* timer select */
+  .timer-select {
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 1rem;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.48s forwards;
+  }
+
+  .timer-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .timer-opts {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .timer-btn {
+    flex: 1;
+    padding: 0.55rem 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: var(--font-m);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+
+  .timer-btn:hover { border-color: var(--accent); color: var(--text); }
+  .timer-btn.selected { border-color: var(--accent); color: var(--accent); background: #0d1f18; }
+
+  /* timer ring in quiz */
+  .timer-display {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #timer-num {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-m);
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .timer-display.urgent #timer-ring { stroke: var(--danger); }
+  .timer-display.urgent #timer-num { color: var(--danger); }
+
+  /* ══════════════════════════════
+     QUIZ SCREEN
+  ══════════════════════════════ */
+  #quiz { padding: 0; }
+
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem 0;
+  }
+
+  .quit-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: var(--font-m);
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .quit-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  .score-display {
+    font-family: var(--font-m);
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .score-display b { color: var(--accent); font-size: 1rem; }
+
+  .streak-display {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-m);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    animation: none;
+  }
+
+  .streak-display.pop {
+    animation: streakPop 0.35s cubic-bezier(0.36,0.07,0.19,0.97);
+  }
+
+  .streak-fire { font-size: 1rem; }
+
+  @keyframes streakPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.5); }
+    70%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+
+  /* progress bar */
+  .prog-wrap {
+    padding: 1rem 1.5rem 0;
+  }
+
+  .prog-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .prog-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .prog-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+  }
+
+  /* question area */
+  .q-area {
+    padding: 1.5rem 1.5rem 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .q-text-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex: 1;
+  }
+
+  .q-text {
+    font-family: var(--font-d);
+    font-size: clamp(1rem, 3.5vw, 1.25rem);
+    font-weight: 700;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .tts-btn {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    margin-top: 2px;
+  }
+
+  .tts-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tts-btn.speaking { border-color: var(--accent); color: var(--accent); background: #0d1f18; }
+  .tts-btn.speaking #tts-wave { animation: ttsWave 0.6s ease-in-out infinite alternate; }
+
+  @keyframes ttsWave {
+    from { opacity: 0.3; }
+    to   { opacity: 1; }
+  }
+
+  /* options */
+  .options { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .opt {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-family: var(--font-m);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text);
+    transition: border-color 0.12s, background 0.12s, transform 0.1s;
+    text-align: left;
+    width: 100%;
+  }
+
+  .opt:hover:not(:disabled) { border-color: var(--accent); background: #0d1f18; transform: translateX(3px); }
+
+  .opt-letter {
+    min-width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s;
+  }
+
+  .opt.correct { border-color: var(--accent); background: #0d1f18; }
+  .opt.correct .opt-letter { background: var(--accent); color: #0a0f0d; }
+
+  .opt.wrong { border-color: var(--danger); background: #1a0c0e; }
+  .opt.wrong .opt-letter { background: var(--danger); color: #fff; }
+
+  .opt:disabled { cursor: default; }
+
+  /* explanation */
+  .exp-box {
+    margin: 1rem 1.5rem;
+    background: #0d1f18;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 0.9rem 1rem;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: #8ab9a8;
+    display: none;
+  }
+  .exp-box.show { display: block; animation: fadeUp 0.3s forwards; }
+  .exp-box strong { color: var(--accent); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 0.4rem; }
+
+  /* next button */
+  .next-wrap {
+    padding: 1rem 1.5rem 2rem;
+  }
+
+  .next-btn {
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-d);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0a0f0d;
+    cursor: pointer;
+    display: none;
+    transition: background 0.15s;
+  }
+  .next-btn.show { display: block; animation: fadeUp 0.25s forwards; }
+  .next-btn:hover { background: var(--accent2); }
+
+  /* ══════════════════════════════
+     RESULT SCREEN
+  ══════════════════════════════ */
+  #result {
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 1.5rem;
+    gap: 0;
+  }
+
+  .res-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 0.4s 0.1s forwards;
+  }
+
+  .res-score {
+    font-family: var(--font-d);
+    font-size: clamp(4rem, 20vw, 7rem);
+    font-weight: 800;
+    line-height: 1;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+    opacity: 0;
+    animation: fadeUp 0.4s 0.2s forwards;
+  }
+
+  .res-denom {
+    font-family: var(--font-m);
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.4s 0.3s forwards;
+  }
+
+  .res-msg {
+    font-family: var(--font-d);
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 0.4s 0.35s forwards;
+  }
+
+  .res-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.4s 0.4s forwards;
+  }
+
+  .res-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 380px;
+    opacity: 0;
+    animation: fadeUp 0.4s 0.5s forwards;
+  }
+
+  .res-btn-primary {
+    padding: 0.9rem;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-d);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0a0f0d;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .res-btn-primary:hover { background: var(--accent2); }
+
+  .res-btn-ghost {
+    padding: 0.9rem;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: var(--font-m);
+    font-size: 0.82rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .res-btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* tracking panel */
+  .tracking-panel {
+    width: 100%;
+    max-width: 380px;
+    margin: 0 0 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.4s 0.45s forwards;
+  }
+
+  .tracking-title {
+    font-family: var(--font-m);
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    text-align: left;
+  }
+
+  .tracking-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .tracking-cat {
+    font-size: 0.75rem;
+    color: var(--text);
+    width: 130px;
+    flex-shrink: 0;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tracking-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .tracking-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .tracking-pct {
+    font-family: var(--font-m);
+    font-size: 0.72rem;
+    width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .tracking-weak  { color: var(--danger); }
+  .tracking-mid   { color: #f0a500; }
+  .tracking-strong{ color: var(--accent); }
+
+  /* ── animations ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── install banner ── */
+  #install-banner {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.78rem;
+    color: var(--text);
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,200,150,0.15);
+    display: none;
+    max-width: 340px;
+    width: calc(100% - 2rem);
+  }
+
+  #install-banner.show { display: flex; animation: fadeUp 0.3s forwards; }
+
+  .install-text { flex: 1; }
+  .install-text b { color: var(--accent); display: block; margin-bottom: 0.1rem; }
+
+  .install-yes {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-d);
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: #0a0f0d;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .install-no {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.25rem;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── HOME ── -->
+  <section class="screen active" id="home">
+    <div class="home-tag">IFT College Bowl Practice</div>
+    <h1 class="home-title">Food<br><span>Science</span><br>Bowl</h1>
+    <p class="home-sub">Select a category and start drilling</p>
+
+    <div class="category-grid" id="cat-grid">
+      <button class="cat-btn selected" data-cat="all">
+        <div class="cat-icon">🔬</div>
+        <div class="cat-name">All Topics</div>
+        <div class="cat-count" id="cnt-all">— questions</div>
+      </button>
+      <button class="cat-btn" data-cat="chemistry">
+        <div class="cat-icon">⚗️</div>
+        <div class="cat-name">Food Chemistry</div>
+        <div class="cat-count" id="cnt-chemistry">— questions</div>
+      </button>
+      <button class="cat-btn" data-cat="microbiology">
+        <div class="cat-icon">🦠</div>
+        <div class="cat-name">Microbiology</div>
+        <div class="cat-count" id="cnt-microbiology">— questions</div>
+      </button>
+      <button class="cat-btn" data-cat="processing">
+        <div class="cat-icon">🏭</div>
+        <div class="cat-name">Processing</div>
+        <div class="cat-count" id="cnt-processing">— questions</div>
+      </button>
+      <button class="cat-btn" data-cat="regulations">
+        <div class="cat-icon">📋</div>
+        <div class="cat-name">Regulations</div>
+        <div class="cat-count" id="cnt-regulations">— questions</div>
+      </button>
+      <button class="cat-btn" data-cat="sensory">
+        <div class="cat-icon">👅</div>
+        <div class="cat-name">Sensory Science</div>
+        <div class="cat-count" id="cnt-sensory">— questions</div>
+      </button>
+      <button class="cat-btn" data-cat="nutrition">
+        <div class="cat-icon">🥗</div>
+        <div class="cat-name">Nutrition</div>
+        <div class="cat-count" id="cnt-nutrition">— questions</div>
+      </button>
+    </div>
+
+    <div class="timer-select" id="timer-select">
+      <div class="timer-label">Timer per question</div>
+      <div class="timer-opts">
+        <button class="timer-btn" data-sec="0">Off</button>
+        <button class="timer-btn" data-sec="15">15s</button>
+        <button class="timer-btn selected" data-sec="30">30s</button>
+        <button class="timer-btn" data-sec="60">60s</button>
+      </div>
+    </div>
+
+    <button class="start-btn" id="start-btn">Start Quiz →</button>
+  </section>
+
+  <!-- ── QUIZ ── -->
+  <section class="screen" id="quiz">
+    <div class="quiz-header">
+      <button class="quit-btn" id="quit-btn">← quit</button>
+      <div class="streak-display" id="streak-display" style="display:none">
+        <span class="streak-fire">🔥</span><span id="streak-num">0</span>
+      </div>
+      <div class="score-display">score <b id="live-score">0</b></div>
+      <div class="timer-display" id="timer-display" style="display:none">
+        <svg width="36" height="36" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15" fill="none" stroke="#1e2e26" stroke-width="3"/>
+          <circle cx="18" cy="18" r="15" fill="none" stroke="#00c896" stroke-width="3"
+            stroke-dasharray="94.2" stroke-dashoffset="0"
+            stroke-linecap="round" transform="rotate(-90 18 18)"
+            id="timer-ring"/>
+        </svg>
+        <span id="timer-num">30</span>
+      </div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+      <div class="prog-label">
+        <span id="q-counter">Q 1 of 10</span>
+        <span id="cat-label"></span>
+      </div>
+    </div>
+    <div class="q-area">
+      <div class="q-category" id="q-cat-tag"></div>
+      <div class="q-text-wrap">
+        <div class="q-text" id="q-text"></div>
+        <button class="tts-btn" id="tts-btn" title="Read question aloud">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" id="tts-wave"/>
+          </svg>
+        </button>
+      </div>
+      <div class="options" id="options"></div>
+    </div>
+    <div class="exp-box" id="exp-box"><strong>Explanation</strong><span id="exp-text"></span></div>
+    <div class="next-wrap">
+      <button class="next-btn" id="next-btn">Next question →</button>
+    </div>
+  </section>
+
+  <!-- ── RESULT ── -->
+  <section class="screen" id="result">
+    <div class="res-label">Round complete</div>
+    <div class="res-score" id="res-score">0</div>
+    <div class="res-denom" id="res-denom">out of 10 correct</div>
+    <div class="res-msg" id="res-msg"></div>
+    <div class="res-sub" id="res-sub"></div>
+
+    <div class="tracking-panel" id="tracking-panel"></div>
+
+    <div class="res-btns">
+      <button class="res-btn-primary" id="retry-btn">Play again →</button>
+      <button class="res-btn-ghost" id="home-btn">← Change category</button>
+      <button class="res-btn-ghost" id="clear-tracking-btn">Reset tracking data</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- install banner -->
+<div id="install-banner">
+  <div class="install-text">
+    <b>Install app</b>
+    Add to home screen for offline use
+  </div>
+  <button class="install-yes" id="install-yes">Install</button>
+  <button class="install-no" id="install-no">✕</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  QUESTION BANK
+// ══════════════════════════════════════════
+const QUESTIONS = [
+  // ── Food Chemistry ──
+  {
+    cat: "chemistry",
+    q: "What is the Maillard reaction?",
+    opts: ["Non-enzymatic browning between reducing sugars and amino acids","Enzymatic oxidation of phenolic compounds","Hydrolysis of starch by amylase","Caramelization of sucrose at high temperature"],
+    ans: 0,
+    exp: "The Maillard reaction is a non-enzymatic browning reaction between reducing sugars and free amino groups. It begins around 140–165°C and produces hundreds of flavor and color compounds — distinct from caramelization."
+  },
+  {
+    cat: "chemistry",
+    q: "At the isoelectric point (pI), what is the net charge of a protein?",
+    opts: ["Positive","Negative","Zero","Variable depending on ionic strength"],
+    ans: 2,
+    exp: "At pI, positive and negative charges balance to give zero net charge. Solubility is minimized here. For example, casein's pI is ~4.6, which is why yogurt (pH ~4.5) forms a gel."
+  },
+  {
+    cat: "chemistry",
+    q: "What is water activity (aw)?",
+    opts: ["Total water content by weight","Ratio of vapor pressure of water in food to that of pure water","Amount of free fatty acids in a product","Osmotic pressure of a food solution"],
+    ans: 1,
+    exp: "aw = p/p₀, where p is the vapor pressure of water in the food and p₀ is that of pure water at the same temperature. Most bacteria require aw ≥ 0.90; molds can grow at aw ≥ 0.70."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the primary structural difference between amylose and amylopectin?",
+    opts: ["Amylose has α-1,6 branches; amylopectin is linear","Amylose is linear α-1,4 glucan; amylopectin has α-1,6 branch points","Amylose contains fructose units","Amylopectin is found only in waxy corn starch"],
+    ans: 1,
+    exp: "Amylose is mostly linear (~20–30% of starch), linked by α-1,4 bonds. Amylopectin is highly branched with α-1,6 linkages every 24–30 glucose units."
+  },
+  {
+    cat: "chemistry",
+    q: "What is retrogradation of starch?",
+    opts: ["Gelatinization of starch granules upon heating","Enzymatic breakdown of amylose during storage","Re-association of starch chains after gelatinization, causing firming","Maillard browning of starch at high temperatures"],
+    ans: 2,
+    exp: "After gelatinization, amylose and amylopectin chains re-associate on cooling. Amylose retrogrades quickly (bread staling); amylopectin retrogrades slowly. This creates resistant starch (RS3) with lower digestibility."
+  },
+  {
+    cat: "chemistry",
+    q: "Which emulsifier component interacts with the aqueous phase in an oil-in-water emulsion?",
+    opts: ["Hydrophobic tail","Hydrophilic head","Both equally","Neither — emulsifiers stay in the oil phase"],
+    ans: 1,
+    exp: "Emulsifiers are amphiphilic. Their hydrophilic head groups orient toward water and hydrophobic tails toward oil, reducing interfacial tension and stabilizing the emulsion droplets."
+  },
+  {
+    cat: "chemistry",
+    q: "What does glass transition temperature (Tg) describe in food science?",
+    opts: ["Temperature at which fat crystallizes","Temperature at which starch gelatinizes","Temperature at which an amorphous material shifts from glassy to rubbery state","Boiling point of water in a food matrix"],
+    ans: 2,
+    exp: "Below Tg, amorphous food materials (e.g., freeze-dried powders, hard candy) behave as rigid glasses. Above Tg they become rubbery and mobile. Tg governs caking, crispness, and stability."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the HLB value used for in food emulsion formulation?",
+    opts: ["Hydrophilic–Lipophilic Balance — guides selection of emulsifier type","Heat–Loss Barrier — predicts cold-chain stability","Hydroxyl–Lipid Binding ratio — measures fat oxidation","None of the above"],
+    ans: 0,
+    exp: "HLB (Hydrophilic-Lipophilic Balance) ranges 0–20. Low HLB (3–6) emulsifiers favor water-in-oil emulsions; high HLB (8–18) favor oil-in-water. It guides emulsifier selection for a target system."
+  },
+
+  // ── Microbiology ──
+  {
+    cat: "microbiology",
+    q: "Which enzyme is responsible for enzymatic browning in cut apples?",
+    opts: ["Amylase","Protease","Polyphenol oxidase","Lipase"],
+    ans: 2,
+    exp: "Polyphenol oxidase (PPO) oxidizes phenolic substrates (e.g., chlorogenic acid) to quinones, which polymerize into brown melanins. Blanching, acidification, or O₂ exclusion inhibits PPO."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the D-value in thermal processing?",
+    opts: ["Temperature required to kill all organisms","Time to reduce microbial population by 90% (1 log) at a given temperature","Decimal increase in spoilage organisms per hour","Temperature difference causing a 10-fold change in D-value"],
+    ans: 1,
+    exp: "The D-value (decimal reduction time) is the time at a specific temperature needed to reduce a microbial population by 1 log (90%). It characterizes the heat resistance of a target organism."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the z-value in thermal processing?",
+    opts: ["Microbial count at zero time","Temperature change required to achieve a 10-fold change in D-value","Time to achieve sterility at reference temperature","Number of log reductions required for commercial sterility"],
+    ans: 1,
+    exp: "The z-value is the temperature increase needed to reduce the D-value by a factor of 10. For Clostridium botulinum spores, z ≈ 10°C. It relates D-values across different temperatures."
+  },
+  {
+    cat: "microbiology",
+    q: "Which pathogen is the primary target of the 12D botulinum cook in low-acid canned foods?",
+    opts: ["Salmonella enteritidis","Listeria monocytogenes","Clostridium botulinum","Staphylococcus aureus"],
+    ans: 2,
+    exp: "Commercial sterility for low-acid foods (pH > 4.6) requires a 12D reduction of C. botulinum spores, achieved at 121.1°C (250°F). This is the retort/autoclave standard."
+  },
+  {
+    cat: "microbiology",
+    q: "At what approximate pH does acid become effective at controlling most foodborne pathogens?",
+    opts: ["pH ≤ 6.0","pH ≤ 5.0","pH ≤ 4.6","pH ≤ 3.5"],
+    ans: 2,
+    exp: "Most foodborne pathogens, including C. botulinum, cannot grow below pH 4.6. This is the cutoff used to define high-acid vs. low-acid foods in regulatory frameworks (e.g., 21 CFR Part 114)."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the primary mechanism by which salt (NaCl) inhibits microbial growth?",
+    opts: ["Lowers pH of the food","Reduces water activity by drawing water out of cells","Denatures microbial enzymes directly","Generates reactive oxygen species"],
+    ans: 1,
+    exp: "Salt lowers water activity (aw) and causes osmotic stress on microbial cells, drawing water out and inhibiting growth. It also has some direct ionic effects on enzymes, but aw reduction is the primary mechanism."
+  },
+
+  // ── Processing ──
+  {
+    cat: "processing",
+    q: "What does pasteurization achieve that sterilization does not?",
+    opts: ["Eliminates all microorganisms including spores","Reduces pathogen load while preserving sensory quality; spores survive","Removes all water from the product","Inactivates all enzymes in a food product"],
+    ans: 1,
+    exp: "Pasteurization (e.g., 72°C/15 s for milk) destroys vegetative pathogens but not heat-resistant spores. Sterilization (e.g., 121°C retort) achieves commercial sterility, targeting C. botulinum spores."
+  },
+  {
+    cat: "processing",
+    q: "Which processing method uses 400–600 MPa pressure to inactivate pathogens without heat?",
+    opts: ["Ohmic heating","Pulsed electric fields","High-pressure processing (HPP)","UV irradiation"],
+    ans: 2,
+    exp: "HPP (Pascalization) applies isostatic pressure to packaged food, inactivating vegetative bacteria, yeasts, and molds while largely preserving heat-labile nutrients and flavor. It cannot inactivate spores at ambient temperature."
+  },
+  {
+    cat: "processing",
+    q: "In spray drying, what controls the final moisture content of the powder?",
+    opts: ["Inlet air temperature only","Outlet air temperature and feed concentration","Feed flow rate only","Atomizer disc speed only"],
+    ans: 1,
+    exp: "Outlet air temperature is the primary control for final powder moisture — it reflects the equilibrium between drying capacity and evaporation load. Feed concentration also affects it by determining the droplet solids load."
+  },
+  {
+    cat: "processing",
+    q: "What is the purpose of homogenization in milk processing?",
+    opts: ["Reduce microbial load","Break up fat globules to prevent cream separation","Adjust pH to improve shelf life","Increase protein content"],
+    ans: 1,
+    exp: "Homogenization forces milk through a small valve under high pressure (~20 MPa), reducing fat globule size from ~4 µm to <1 µm. Smaller globules have slower creaming rates, preventing cream layer formation."
+  },
+  {
+    cat: "processing",
+    q: "What is the Maillard reaction most closely associated with in extrusion processing?",
+    opts: ["Starch gelatinization","Color and flavor development from heat and mechanical energy","Protein denaturation by pressure","Lipid oxidation from shear forces"],
+    ans: 1,
+    exp: "In extrusion, the combination of high temperature, pressure, shear, and moisture drives the Maillard reaction, producing characteristic browning and roasted/toasted flavors in extruded snacks and breakfast cereals."
+  },
+
+  // ── Food Chemistry (additional) ──
+  {
+    cat: "chemistry",
+    q: "Which type of fat is most susceptible to lipid oxidation?",
+    opts: ["Saturated fatty acids","Monounsaturated fatty acids","Polyunsaturated fatty acids","Trans fatty acids"],
+    ans: 2,
+    exp: "Polyunsaturated fatty acids (PUFAs) have multiple double bonds, each of which is a site for free radical attack. Oxidation rate increases roughly as 1:10:100 for mono:di:tri-unsaturated fatty acids."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the function of antioxidants like BHA and BHT in food products?",
+    opts: ["Lower water activity","Chelate pro-oxidant metal ions and donate hydrogen to free radicals","Increase emulsion stability by lowering interfacial tension","Inhibit enzymatic browning by blocking PPO active site"],
+    ans: 1,
+    exp: "BHA and BHT are phenolic antioxidants that donate hydrogen atoms to lipid peroxy radicals, interrupting the chain reaction of lipid oxidation. They can also chelate metals that catalyze oxidation."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the Lard Shortening Index (SFC) used to measure?",
+    opts: ["Free fatty acid content","Solid fat content at a given temperature","Smoke point of fats","Degree of hydrogenation"],
+    ans: 1,
+    exp: "Solid Fat Content (SFC) measures the proportion of fat that is crystalline (solid) at a specific temperature. It determines the texture and functionality of fats in products like chocolate, margarine, and pastry."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the primary role of phospholipids in cell membranes?",
+    opts: ["Energy storage","Structural bilayer formation due to amphiphilic nature","Signal transduction only","Enzymatic catalysis"],
+    ans: 1,
+    exp: "Phospholipids form bilayers because their hydrophilic phosphate heads face water and hydrophobic fatty acid tails face inward. This amphiphilic structure is the basis of all biological membranes."
+  },
+  {
+    cat: "chemistry",
+    q: "What happens to proteins during denaturation?",
+    opts: ["Primary structure (peptide bonds) is broken","Secondary and tertiary structure unfolds without breaking peptide bonds","Amino acids are hydrolyzed","Disulfide bonds are the only bonds affected"],
+    ans: 1,
+    exp: "Denaturation disrupts non-covalent interactions (hydrogen bonds, hydrophobic interactions, electrostatic interactions) that maintain secondary, tertiary, and quaternary structure, causing unfolding. Peptide bonds remain intact."
+  },
+  {
+    cat: "chemistry",
+    q: "What is caramelization?",
+    opts: ["Non-enzymatic browning between sugars and amino acids","Thermal degradation of sugars in the absence of amino compounds","Enzymatic oxidation of sugars","Fermentation of sucrose by yeast"],
+    ans: 1,
+    exp: "Caramelization is the pyrolysis (thermal decomposition) of sugars without amino compounds. It occurs above 160°C for sucrose and produces caramel flavors and brown pigments through dehydration, fragmentation, and polymerization."
+  },
+  {
+    cat: "chemistry",
+    q: "Which vitamin is destroyed most rapidly by heat processing?",
+    opts: ["Vitamin A","Vitamin D","Vitamin C (ascorbic acid)","Vitamin K"],
+    ans: 2,
+    exp: "Vitamin C (ascorbic acid) is the most heat-labile common vitamin. It is also sensitive to oxygen, light, and alkaline conditions. Its loss is often used as an indicator of overall vitamin retention in processed foods."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the significance of the melting point of cocoa butter in chocolate?",
+    opts: ["It determines the color of chocolate","It is just below body temperature (~37°C), giving a clean melt-in-mouth sensation","It prevents lipid oxidation","It determines emulsification stability"],
+    ans: 1,
+    exp: "Cocoa butter melts at 32–35°C, just below body temperature. This gives chocolate its characteristic sharp melting, smooth mouthfeel, and clean flavor release. It also contributes to chocolate's brittleness at room temperature."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the role of lecithin in chocolate manufacturing?",
+    opts: ["Sweetener replacement","Emulsifier that reduces viscosity and fat content needed","Crystallization seed for cocoa butter","Antioxidant to prevent rancidity"],
+    ans: 1,
+    exp: "Lecithin (phosphatidylcholine from soy or sunflower) is an emulsifier added to chocolate at 0.3–0.5%. It coats sugar and cocoa particles, reducing friction and viscosity, allowing chocolate manufacturers to use less cocoa butter."
+  },
+  {
+    cat: "chemistry",
+    q: "What is meant by 'gelatinization' of starch?",
+    opts: ["Formation of a gel by cooling starch solution","Irreversible swelling and disruption of starch granules upon heating in excess water","Enzymatic hydrolysis of starch","Recrystallization of starch chains after cooking"],
+    ans: 1,
+    exp: "Gelatinization occurs when starch granules absorb water and swell irreversibly on heating past their gelatinization temperature (typically 60–80°C depending on starch source). The granules lose their birefringence and viscosity of the system increases dramatically."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the Maillard reaction intermediate that gives bread crust its characteristic aroma?",
+    opts: ["Acrylamide","Furfural","Diacetyl","2-acetyl-1-pyrroline"],
+    ans: 3,
+    exp: "2-Acetyl-1-pyrroline (2-AP) is a key Maillard reaction product responsible for the roasted, popcorn-like aroma of bread crust, popcorn, and fragrant rice varieties like basmati and jasmine."
+  },
+  {
+    cat: "chemistry",
+    q: "What type of bond links amino acids together in a protein?",
+    opts: ["Hydrogen bond","Ionic bond","Peptide (amide) bond","Disulfide bond"],
+    ans: 2,
+    exp: "Amino acids are linked by peptide bonds — covalent amide bonds formed between the carboxyl group of one amino acid and the amino group of the next, with loss of water. This forms the primary structure of proteins."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the purpose of blanching vegetables before freezing?",
+    opts: ["Increase fiber content","Inactivate enzymes that cause quality deterioration during frozen storage","Sterilize the product","Increase water activity"],
+    ans: 1,
+    exp: "Blanching (brief heat treatment, usually in hot water or steam) inactivates enzymes like peroxidase and lipoxygenase that would otherwise cause off-flavors, color changes, and texture loss during frozen storage."
+  },
+  {
+    cat: "chemistry",
+    q: "Which functional group is responsible for the acidic character of fatty acids?",
+    opts: ["Methyl group (–CH₃)","Carboxyl group (–COOH)","Hydroxyl group (–OH)","Ester group (–COO–)"],
+    ans: 1,
+    exp: "The carboxyl group (–COOH) is the defining feature of fatty acids. It can donate a proton (H⁺), making fatty acids weak acids. The carboxyl group also participates in ester bond formation with glycerol to form triglycerides."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the Schaal oven test used for in food science?",
+    opts: ["Measuring protein denaturation temperature","Accelerated evaluation of oxidative rancidity in fats and oils","Determining water activity","Measuring starch gelatinization enthalpy"],
+    ans: 1,
+    exp: "The Schaal oven test is an accelerated oxidative stability test where fat or food containing fat is stored at elevated temperature (typically 60–70°C) to predict shelf-life against rancidity under normal storage conditions."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the approximate isoelectric point (pI) of casein?",
+    opts: ["3.0","4.6","6.7","8.2"],
+    ans: 1,
+    exp: "Casein has a pI of approximately 4.6. This is the basis of acid coagulation in yogurt and cheese making — adjusting milk pH to ~4.6 causes casein to precipitate, forming the curd."
+  },
+  {
+    cat: "chemistry",
+    q: "What does the term 'trans fat' refer to?",
+    opts: ["Fats with all cis double bonds","Fats produced by partial hydrogenation with double bonds in trans configuration","Fats found only in animal products","Saturated fats with no double bonds"],
+    ans: 1,
+    exp: "Trans fats contain double bonds in the trans configuration, produced mainly by partial hydrogenation of vegetable oils. Unlike naturally occurring cis unsaturated fats, trans fats raise LDL and lower HDL cholesterol, increasing cardiovascular disease risk."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the Maillard reaction end product that gives dark beer and coffee their brown color?",
+    opts: ["Caramel","Melanoidins","Anthocyanins","Tannins"],
+    ans: 1,
+    exp: "Melanoidins are high-molecular-weight brown polymers formed in the late stages of the Maillard reaction. They are responsible for brown colors in roasted coffee, dark beer, bread crust, and other thermally processed foods."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the primary mechanism of action of EDTA as a food additive?",
+    opts: ["Free radical scavenging","Metal ion chelation preventing oxidation and microbial growth","Lowering water activity","pH buffering"],
+    ans: 1,
+    exp: "EDTA (ethylenediaminetetraacetic acid) is a chelating agent that binds pro-oxidant metal ions (Fe²⁺, Cu²⁺) and metal ions required by microorganisms, preventing lipid oxidation and inhibiting microbial growth."
+  },
+  {
+    cat: "chemistry",
+    q: "What characterizes a Newtonian fluid in food science?",
+    opts: ["Viscosity increases with shear rate","Viscosity is constant regardless of shear rate","Viscosity decreases with shear rate","The fluid shows a yield stress before flowing"],
+    ans: 1,
+    exp: "Newtonian fluids maintain constant viscosity regardless of applied shear rate. Water, most oils, and dilute sugar solutions are Newtonian. Many food systems (ketchup, yogurt, starch pastes) are non-Newtonian."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the function of xanthan gum in food formulations?",
+    opts: ["Sweetener","Thickener, stabilizer, and suspending agent with pseudoplastic behavior","Emulsifier replacing lecithin","Antimicrobial preservative"],
+    ans: 1,
+    exp: "Xanthan gum is a microbial polysaccharide (from Xanthomonas campestris) used as a thickener and stabilizer. It is highly pseudoplastic (shear-thinning), making it ideal for sauces and dressings that pour easily but cling to food."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the difference between simple and complex carbohydrates?",
+    opts: ["Simple carbs contain fiber; complex do not","Simple carbs are mono/disaccharides; complex are polysaccharides","Simple carbs are found only in fruits","Complex carbs are always sweeter"],
+    ans: 1,
+    exp: "Simple carbohydrates are monosaccharides (glucose, fructose) and disaccharides (sucrose, lactose). Complex carbohydrates are polysaccharides (starch, cellulose, glycogen) composed of many monosaccharide units linked together."
+  },
+  {
+    cat: "chemistry",
+    q: "What is the primary structural protein in meat muscle?",
+    opts: ["Collagen","Myosin","Actin","Casein"],
+    ans: 1,
+    exp: "Myosin is the most abundant myofibrillar protein in muscle (~55% of myofibrillar protein). It is the primary contractile protein and is essential to meat texture, water-holding capacity, and gelation during heating."
+  },
+
+  // ── Microbiology (additional) ──
+  {
+    cat: "microbiology",
+    q: "What is the minimum water activity (aw) at which most bacteria can grow?",
+    opts: ["0.99","0.91","0.70","0.60"],
+    ans: 1,
+    exp: "Most bacteria require aw ≥ 0.91 for growth. Notable exception: Staphylococcus aureus can grow at aw as low as 0.83 under aerobic conditions (0.90 anaerobically). Xerophilic molds can grow below 0.70."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the HACCP principle that involves identifying critical control points?",
+    opts: ["Principle 1: Hazard analysis","Principle 2: Identify CCPs","Principle 3: Establish critical limits","Principle 4: Monitoring procedures"],
+    ans: 1,
+    exp: "HACCP Principle 2 involves identifying Critical Control Points (CCPs) — steps in the process where control can be applied to prevent or eliminate a food safety hazard or reduce it to an acceptable level."
+  },
+  {
+    cat: "microbiology",
+    q: "Which organism produces aflatoxins and in what food commodities are they most commonly found?",
+    opts: ["Penicillium in dairy products","Aspergillus flavus/parasiticus in peanuts, corn, and tree nuts","Fusarium in fresh produce","Clostridium in canned vegetables"],
+    ans: 1,
+    exp: "Aflatoxins are mycotoxins produced primarily by Aspergillus flavus and A. parasiticus. They commonly contaminate peanuts, corn, cottonseed, and tree nuts, especially under warm and humid storage conditions. Aflatoxin B1 is the most potent natural carcinogen known."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the difference between bacteriostatic and bactericidal treatments?",
+    opts: ["Bacteriostatic kills bacteria; bactericidal inhibits growth","Bacteriostatic inhibits growth without killing; bactericidal kills bacteria","They are the same","Bacteriostatic applies only to spores"],
+    ans: 1,
+    exp: "Bacteriostatic treatments inhibit bacterial growth without necessarily killing the organisms (e.g., refrigeration, some preservatives). Bactericidal treatments actively kill bacteria (e.g., pasteurization, certain antimicrobials)."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the mechanism by which nisin acts as a food preservative?",
+    opts: ["Lowers water activity","Disrupts bacterial cell membranes and inhibits cell wall synthesis","Chelates metal ions needed for microbial growth","Denatures microbial enzymes by oxidation"],
+    ans: 1,
+    exp: "Nisin is a bacteriocin (polypeptide) produced by Lactococcus lactis. It binds to lipid II, a cell wall precursor, creating pores in the bacterial membrane and disrupting cell wall synthesis, primarily effective against Gram-positive bacteria and spores."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the generation time of bacteria, and why is it important in food safety?",
+    opts: ["Time for a bacterium to produce toxins","Time for a population to double; determines how quickly unsafe levels are reached","Time for a spore to germinate","Time between log and stationary growth phases"],
+    ans: 1,
+    exp: "Generation time (doubling time) is the time needed for a bacterial population to double. E. coli at 37°C doubles every ~20 min. A single cell can become >1 million in 7 hours, underscoring the importance of temperature control."
+  },
+  {
+    cat: "microbiology",
+    q: "Which foodborne pathogen is associated with ready-to-eat foods and has the ability to grow at refrigeration temperatures?",
+    opts: ["Clostridium botulinum","Salmonella enteritidis","Listeria monocytogenes","Staphylococcus aureus"],
+    ans: 2,
+    exp: "Listeria monocytogenes is psychrotrophic — it can grow at temperatures as low as 0°C. This makes it particularly dangerous in ready-to-eat refrigerated foods like deli meats, soft cheeses, and smoked fish."
+  },
+  {
+    cat: "microbiology",
+    q: "What are the four main phases of bacterial growth in a closed system?",
+    opts: ["Exponential, stationary, death, recovery","Lag, exponential (log), stationary, death (decline)","Induction, growth, sporulation, germination","Aerobic, anaerobic, microaerophilic, fermentative"],
+    ans: 1,
+    exp: "Bacterial growth follows four phases: (1) Lag — adaptation, no net growth; (2) Log (exponential) — rapid doubling; (3) Stationary — growth rate equals death rate due to nutrient depletion/waste accumulation; (4) Death — population declines."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the primary route of Salmonella contamination in poultry products?",
+    opts: ["Water during chilling","Fecal contamination during processing and cross-contamination","Feed additives","Packaging materials"],
+    ans: 1,
+    exp: "Salmonella is primarily a gut colonizer in poultry. Contamination occurs during slaughter when intestinal contents contact the carcass, and cross-contamination spreads it through processing equipment, water, and surfaces."
+  },
+  {
+    cat: "microbiology",
+    q: "What does 'commercial sterility' mean for thermally processed foods?",
+    opts: ["Complete absence of all microorganisms","Absence of organisms capable of growth under normal storage conditions and of public health significance","Sterility achieved by UV irradiation","Reduction of microbial load by 6 log cycles"],
+    ans: 1,
+    exp: "Commercial sterility does not mean absolute sterility. It means the food is free from microorganisms that can grow under intended storage conditions and free from organisms of public health significance, achieved through thermal processing (retorting)."
+  },
+  {
+    cat: "microbiology",
+    q: "Which toxin is associated with improperly canned low-acid foods and can cause paralysis?",
+    opts: ["Aflatoxin","Staphylococcal enterotoxin","Botulinum neurotoxin","Deoxynivalenol (DON)"],
+    ans: 2,
+    exp: "Clostridium botulinum produces botulinum neurotoxin, the most potent biological toxin known. It blocks acetylcholine release at neuromuscular junctions, causing flaccid paralysis. Low-acid canned foods (pH > 4.6) with anaerobic conditions favor spore germination and toxin production."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the purpose of the enrichment step in microbiological testing of foods?",
+    opts: ["Kill background flora","Allow target organisms to multiply to detectable levels in selective conditions","Measure water activity of the sample","Separate fat from protein in the food matrix"],
+    ans: 1,
+    exp: "Enrichment provides nutrients and incubation conditions that allow injured or low-level target pathogens (e.g., Salmonella) to multiply to detectable numbers, while selective agents suppress competing flora."
+  },
+  {
+    cat: "microbiology",
+    q: "What is hurdle technology in food preservation?",
+    opts: ["A single high-intensity preservation treatment","Combining multiple sub-lethal preservation factors (hurdles) to inhibit microbial growth","Using physical barriers to prevent recontamination","Applying high-pressure homogenization"],
+    ans: 1,
+    exp: "Hurdle technology (Leistner concept) uses multiple combined preservation factors — temperature, aw, pH, Eh, preservatives — each at sublethal levels. Microorganisms must overcome each 'hurdle,' making the combination more effective than any single factor."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the F₀ value in thermal processing?",
+    opts: ["The frequency of contamination events","The equivalent processing time at 121.1°C required to achieve the target lethality","The minimum temperature for spore inactivation","The time to reduce spores by 1 log at 100°C"],
+    ans: 1,
+    exp: "F₀ is the equivalent minutes of heating at 121.1°C (250°F) with z = 10°C needed to achieve target lethality. For low-acid canned foods, F₀ ≥ 3 min is required to achieve the 12D reduction of C. botulinum spores."
+  },
+  {
+    cat: "microbiology",
+    q: "Which preservation method works by creating an anaerobic, acidic environment through microbial fermentation?",
+    opts: ["Freeze-drying","Fermentation/pickling (lactic acid fermentation)","Modified atmosphere packaging","Irradiation"],
+    ans: 1,
+    exp: "Lactic acid fermentation (used in sauerkraut, kimchi, yogurt, cheese) produces lactic acid that lowers pH and creates anaerobic conditions inhibiting spoilage and pathogenic organisms. This is one of the oldest preservation methods."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the difference between a food infection and a food intoxication?",
+    opts: ["There is no difference","Infection requires ingestion of live pathogens that cause illness; intoxication results from ingestion of preformed toxin","Infection is caused by viruses only; intoxication by bacteria","Intoxication has a longer incubation period than infection"],
+    ans: 1,
+    exp: "Food infection requires ingesting viable pathogens that colonize the gut (e.g., Salmonella, incubation 6–48 h). Food intoxication results from consuming preformed toxin (e.g., S. aureus enterotoxin, incubation 1–6 h) — cooking may kill the bacteria but the heat-stable toxin remains."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the primary target of sanitizers like quaternary ammonium compounds (quats) in food processing?",
+    opts: ["Spore coat disruption","Disruption of microbial cell membrane","DNA cross-linking","Inhibition of ATP synthesis"],
+    ans: 1,
+    exp: "Quaternary ammonium compounds (quats) are cationic surfactants that disrupt cell membranes by interacting with negatively charged phospholipids. They are effective against vegetative bacteria but not spores, and are widely used as surface sanitizers in food facilities."
+  },
+  {
+    cat: "microbiology",
+    q: "What is the Enterobacteriaceae family commonly used as an indicator of in food microbiology?",
+    opts: ["Spoilage by molds","Fecal contamination and sanitation failures","Presence of mycotoxins","Viral contamination"],
+    ans: 1,
+    exp: "Enterobacteriaceae (including E. coli and coliforms) are used as hygiene indicators. Their presence suggests fecal contamination, sanitation failures, or post-process contamination, as they are found in the intestinal tract of warm-blooded animals."
+  },
+  {
+    cat: "microbiology",
+    q: "At what temperature range does Staphylococcus aureus produce enterotoxin?",
+    opts: ["0–5°C","10–46°C (optimum 35–37°C)","50–60°C","Above 70°C"],
+    ans: 1,
+    exp: "S. aureus produces heat-stable enterotoxins optimally at 35–37°C but can produce them across 10–46°C. The toxins resist boiling for 30 min, so even if bacteria are killed by cooking, the toxin may remain active."
+  },
+  {
+    cat: "microbiology",
+    q: "What does 'psychrotrophic' mean in food microbiology?",
+    opts: ["Organisms that prefer high temperatures","Organisms capable of growth at low temperatures (0–7°C) despite optimal growth at higher temperatures","Organisms that produce toxins only at cold temperatures","Organisms that are killed by freezing"],
+    ans: 1,
+    exp: "Psychrotrophic organisms grow at refrigeration temperatures (0–7°C) even though their optimal growth temperature is higher (20–30°C). Key examples include Listeria monocytogenes, Yersinia enterocolitica, and many spoilage organisms in refrigerated foods."
+  },
+
+  // ── Processing (additional) ──
+  {
+    cat: "processing",
+    q: "What is the principle behind freeze-drying (lyophilization)?",
+    opts: ["Evaporation of water at high temperatures","Sublimation of ice directly to vapor under low pressure, bypassing the liquid phase","Spray drying with cryogenic air","Osmotic dehydration with salt"],
+    ans: 1,
+    exp: "Freeze-drying first freezes the product, then reduces pressure so ice sublimes directly to vapor without passing through the liquid phase. This preserves structure, nutrients, and flavor far better than conventional drying but is expensive and slow."
+  },
+  {
+    cat: "processing",
+    q: "What is the purpose of modified atmosphere packaging (MAP)?",
+    opts: ["Increase oxygen to preserve color","Replace headspace gas composition to slow respiration, oxidation, and microbial growth","Reduce package weight","Sterilize the product through CO₂ exposure"],
+    ans: 1,
+    exp: "MAP replaces the air in a package with a controlled gas mixture (typically CO₂, N₂, O₂ in varying ratios). CO₂ inhibits microbial growth and mold; N₂ displaces O₂ to prevent oxidation; O₂ may be included for fresh meat color retention."
+  },
+  {
+    cat: "processing",
+    q: "What is the Brix value and what does it measure?",
+    opts: ["Acidity of fruit juices in meq/L","Percentage of soluble solids (primarily sugars) by weight in a solution","Water activity of concentrated products","Salt concentration in brined products"],
+    ans: 1,
+    exp: "Brix (°Bx) measures the percentage of dissolved soluble solids (mainly sucrose) in a solution by refractometry or hydrometry. One degree Brix = 1 g sucrose per 100 g solution. It is widely used in fruit juice, wine, and sugar industries."
+  },
+  {
+    cat: "processing",
+    q: "What is ohmic heating in food processing?",
+    opts: ["Heating by infrared radiation","Heating by passing electrical current directly through food, generating heat via electrical resistance","Heating by microwave radiation","Heating by direct steam injection"],
+    ans: 1,
+    exp: "Ohmic (resistive) heating passes an alternating electric current directly through food. Heat is generated internally and uniformly throughout the product proportional to electrical resistance. It is particularly suited to particulate foods in liquid where conventional heating causes overprocessing of the liquid."
+  },
+  {
+    cat: "processing",
+    q: "What is the critical moisture content in drying operations?",
+    opts: ["Moisture content at which the product becomes microbiologically safe","Point where drying rate changes from constant-rate to falling-rate period","Moisture content of fresh product before drying","Maximum moisture allowed in the final product by regulation"],
+    ans: 1,
+    exp: "The critical moisture content is the transition point in drying where free surface moisture is exhausted. Below this point, drying enters the falling-rate period where moisture must diffuse from within the product, making drying slower and more energy-intensive."
+  },
+  {
+    cat: "processing",
+    q: "What is aseptic processing in food manufacturing?",
+    opts: ["Processing at very low temperatures","Sterilizing product and packaging separately, then filling in a sterile environment","Processing without any additives","Cold-fill processing with pasteurized products"],
+    ans: 1,
+    exp: "Aseptic processing sterilizes the product (UHT: typically 135–150°C for 2–8 s) and the packaging material separately, then fills and seals the package in a sterile environment. This allows shelf-stable products with better quality than retort processing."
+  },
+  {
+    cat: "processing",
+    q: "What is the purpose of tempering in chocolate manufacturing?",
+    opts: ["Adding emulsifiers to reduce viscosity","Controlled cooling to encourage formation of stable Form V cocoa butter crystals","Conching to develop flavor","Adding milk solids to adjust sweetness"],
+    ans: 1,
+    exp: "Tempering controls cocoa butter crystallization to produce the stable polymorphic Form V (β₂) crystals. Properly tempered chocolate has a glossy surface, sharp snap, good contraction from molds, and resistance to bloom formation."
+  },
+  {
+    cat: "processing",
+    q: "What is the function of a heat exchanger in HTST pasteurization of milk?",
+    opts: ["Adds heat energy through microwave radiation","Transfers heat between raw cold milk and hot pasteurized milk to improve energy efficiency","Sterilizes the milk through UV exposure","Homogenizes fat globules"],
+    ans: 1,
+    exp: "In HTST pasteurization, regenerative heat exchangers transfer heat from the hot pasteurized milk to the incoming cold raw milk, recovering ~90% of the heat energy. This dramatically reduces energy costs compared to heating with steam alone."
+  },
+  {
+    cat: "processing",
+    q: "What is the Maillard reaction's role in the formation of acrylamide in foods?",
+    opts: ["Acrylamide is a Maillard pigment","Asparagine reacts with reducing sugars via the Maillard pathway to form acrylamide at high temperatures","Acrylamide forms from lipid oxidation","Acrylamide is produced only in fermented foods"],
+    ans: 1,
+    exp: "Acrylamide forms primarily through the Maillard reaction between the amino acid asparagine and reducing sugars at temperatures above 120°C (frying, baking, roasting). It is of concern in starchy foods like potato chips, French fries, and bread."
+  },
+  {
+    cat: "processing",
+    q: "What is the difference between blanching in steam vs. hot water?",
+    opts: ["Steam blanching is less effective at enzyme inactivation","Hot water blanching causes more leaching of water-soluble nutrients than steam blanching","Steam blanching takes longer than hot water","There is no practical difference"],
+    ans: 1,
+    exp: "Hot water blanching is more effective for heat transfer and faster, but causes significant leaching of water-soluble vitamins (B, C) and minerals. Steam blanching minimizes nutrient leaching and produces less wastewater but may have uneven heat distribution."
+  },
+  {
+    cat: "processing",
+    q: "What is the purpose of added sulfur dioxide (SO₂) in wine and dried fruits?",
+    opts: ["Increase ethanol content","Prevent browning and microbial spoilage as an antimicrobial and antioxidant","Adjust pH to improve fermentation","Add sulfurous flavor notes"],
+    ans: 1,
+    exp: "SO₂ (as sulfites) in wine and dried fruits acts as: (1) antioxidant — inhibiting enzymatic and non-enzymatic browning; (2) antimicrobial — particularly against wild yeasts and bacteria; (3) binding agent — combining with aldehydes. It is regulated due to allergic reactions in sensitive individuals."
+  },
+  {
+    cat: "processing",
+    q: "What does 'cold chain' refer to in food distribution?",
+    opts: ["Supply chain using only frozen products","Unbroken refrigerated distribution system maintaining safe temperatures from producer to consumer","Cold smoking preservation method","Freeze-concentration processing technique"],
+    ans: 1,
+    exp: "The cold chain is the temperature-controlled supply chain — from harvest/slaughter through processing, distribution, retail, and final use — that maintains perishable products at safe temperatures (typically ≤4°C or frozen at ≤-18°C). Any break allows microbial growth."
+  },
+  {
+    cat: "processing",
+    q: "What is the function of a cyclone separator in spray drying operations?",
+    opts: ["Atomize the feed into droplets","Separate dried powder particles from the exhaust air stream","Heat the inlet air","Control outlet air humidity"],
+    ans: 1,
+    exp: "Cyclone separators use centrifugal force to separate fine powder particles from the exhaust air stream in spray dryers. Air enters tangentially, particles spiral down and collect at the bottom, and clean air exits from the top — recovering product and reducing emissions."
+  },
+  {
+    cat: "processing",
+    q: "What is meant by 'texture profile analysis' (TPA) in food science?",
+    opts: ["Sensory panel evaluation of texture","Instrumental two-bite compression test simulating chewing to measure mechanical texture properties","Chemical analysis of fiber content","Microscopic analysis of food structure"],
+    ans: 1,
+    exp: "TPA is an instrumental test where a food sample is compressed twice (simulating two bites). Parameters measured include hardness, cohesiveness, springiness, chewiness, and adhesiveness, providing objective texture characterization correlated with sensory perception."
+  },
+  {
+    cat: "processing",
+    q: "What is the primary purpose of curing (with nitrates/nitrites) in meat processing?",
+    opts: ["Tenderization of muscle fibers","Color development, flavor, and inhibition of Clostridium botulinum","Reduction of fat content","Increase protein solubility"],
+    ans: 1,
+    exp: "Meat curing with nitrate/nitrite serves multiple functions: (1) formation of stable pink nitrosomyoglobin color; (2) characteristic cured flavor; (3) antioxidant effect delaying rancidity; (4) most critically, inhibition of C. botulinum spore germination and toxin production in cured meat products."
+  },
+  {
+    cat: "processing",
+    q: "What is the role of starter cultures in cheese making?",
+    opts: ["Add coloring agents","Produce lactic acid lowering pH and contributing to flavor and texture development","Increase protein content","Prevent fat separation"],
+    ans: 1,
+    exp: "Starter cultures (LAB: Lactococcus, Lactobacillus, Streptococcus) ferment lactose to lactic acid, lowering pH and causing casein coagulation. They also produce flavor compounds (diacetyl, acetate, CO₂) and contribute enzymes for proteolysis during aging."
+  },
+  {
+    cat: "processing",
+    q: "What is the significance of the smoke point of an oil?",
+    opts: ["Temperature at which oil freezes","Temperature at which oil begins to break down and smoke, producing acrolein and off-flavors","Temperature at which oil becomes solid","Temperature at which oxidation begins"],
+    ans: 1,
+    exp: "The smoke point is the temperature at which an oil begins to decompose visibly, releasing acrolein (a pungent irritant) and other breakdown products. Exceeding the smoke point degrades oil quality, produces harmful compounds, and negatively affects food flavor. Refined oils generally have higher smoke points than unrefined."
+  },
+  {
+    cat: "processing",
+    q: "What is supercritical CO₂ extraction used for in the food industry?",
+    opts: ["Sterilization of packaged foods","Extraction of flavors, decaffeination, and hop extraction using CO₂ above its critical point","Carbonation of beverages","Freeze concentration of juices"],
+    ans: 1,
+    exp: "Supercritical CO₂ (above 31.1°C and 73.8 bar) has liquid-like density and gas-like diffusivity, making it an excellent solvent. Food applications include decaffeination of coffee/tea, hop extraction for beer, and extraction of flavors and nutraceuticals without solvent residues."
+  },
+  {
+    cat: "processing",
+    q: "What is the retrogradation of starch and how does it affect bread staling?",
+    opts: ["Starch breaks down causing softening","Amylopectin chains slowly recrystallize during storage, causing firming and loss of moisture from crumb","Starch dissolves in bread moisture during storage","Enzymatic hydrolysis of starch softens the crumb over time"],
+    ans: 1,
+    exp: "Bread staling is primarily caused by starch retrogradation — the slow recrystallization of amylopectin chains after baking. This creates a firmer, less pliable crumb over days. Emulsifiers (monoglycerides), enzymes (amylases), and storage temperature affect staling rate."
+  },
+  {
+    cat: "processing",
+    q: "What is the purpose of the 'kill step' in food processing?",
+    opts: ["Remove allergens from the product","Apply a validated treatment (heat, pressure, irradiation) to reduce pathogen load to safe levels","Remove pesticide residues","Inactivate natural toxins in raw materials"],
+    ans: 1,
+    exp: "The kill step is a validated critical control point (CCP) in HACCP that reduces target pathogens to safe levels. Examples: pasteurization for milk (72°C/15s), retorting for canned foods (121°C/3 min F₀), or HPP for RTE products. It must be validated to demonstrate the required log reduction."
+  },
+  {
+    cat: "processing",
+    q: "What is the function of rennet in cheese making?",
+    opts: ["Lower pH by producing lactic acid","Cleave κ-casein causing micelle destabilization and milk coagulation","Add characteristic cheese flavor","Increase fat content of the curd"],
+    ans: 1,
+    exp: "Rennet (containing chymosin/rennin) cleaves κ-casein at the Phe105-Met106 bond, removing the hydrophilic macropeptide. This destabilizes the casein micelle steric repulsion, allowing calcium-mediated aggregation and curd formation — the enzymatic coagulation mechanism in most cheeses."
+  }
+
+  ,
+
+  // ── Food Regulations ──
+  {
+    cat: "regulations",
+    q: "What does GRAS stand for in U.S. food regulation?",
+    opts: ["Generally Required And Safe","Generally Recognized As Safe","Government Regulated Additive System","Genetically Reviewed Agricultural Substance"],
+    ans: 1,
+    exp: "GRAS (Generally Recognized As Safe) designates substances that qualified experts consider safe based on extensive history of use or scientific procedures. GRAS substances are exempt from the food additive petition process but must still be safe for their intended use."
+  },
+  {
+    cat: "regulations",
+    q: "Under FDA regulations, what pH defines the boundary between acid and low-acid foods for canning?",
+    opts: ["pH 3.5","pH 4.6","pH 5.0","pH 6.0"],
+    ans: 1,
+    exp: "FDA regulations (21 CFR 113/114) define low-acid canned foods as those with pH greater than 4.6. Below pH 4.6, C. botulinum cannot germinate or produce toxin. Products at pH 4.6 or below are regulated as acidified or acid foods."
+  },
+  {
+    cat: "regulations",
+    q: "Which of the following is the 9th major food allergen added by the FASTER Act (effective 2023)?",
+    opts: ["Mustard","Sesame","Lupin","Celery"],
+    ans: 1,
+    exp: "The FASTER Act (2021, effective January 2023) added sesame as the 9th major allergen in the U.S., joining milk, eggs, fish, shellfish, tree nuts, peanuts, wheat, and soybeans. All nine must be declared on food labels."
+  },
+  {
+    cat: "regulations",
+    q: "What is the Delaney Clause in U.S. food law?",
+    opts: ["Requires all food labels to list ingredients in descending order of weight","Prohibits FDA approval of any food additive shown to cause cancer in humans or animals","Establishes pesticide residue tolerances in food","Defines standards of identity for dairy products"],
+    ans: 1,
+    exp: "The Delaney Clause (1958) prohibits the FDA from approving any food additive found to cause cancer in humans or animals at any dose. It establishes a zero-risk standard for carcinogenic additives, distinct from the reasonable certainty of no harm standard for other additives."
+  },
+  {
+    cat: "regulations",
+    q: "What is a 'standard of identity' in U.S. food regulation?",
+    opts: ["A country of origin labeling requirement","An FDA-defined specification of what a food must contain to legally use a particular name","A mandatory allergen declaration format","An organic certification standard"],
+    ans: 1,
+    exp: "Standards of identity (21 CFR Parts 131-169) define what a food product must contain to be sold under a specific name. For example, mayonnaise must contain at least 65% vegetable oil. Products not meeting these standards cannot use the standardized name."
+  },
+  {
+    cat: "regulations",
+    q: "Which agency has inspection authority over meat, poultry, and egg products in the U.S.?",
+    opts: ["FDA (Food and Drug Administration)","USDA FSIS (Food Safety and Inspection Service)","EPA (Environmental Protection Agency)","CDC (Centers for Disease Control)"],
+    ans: 1,
+    exp: "USDA-FSIS has mandatory continuous inspection authority over meat, poultry, and processed egg products. FDA regulates most other foods. This dual system means roughly 80% of the food supply by volume falls under FDA jurisdiction."
+  },
+  {
+    cat: "regulations",
+    q: "What is FSMA and what was its primary impact on U.S. food safety regulation?",
+    opts: ["Food Safety Modernization Act - shifted focus from responding to outbreaks to preventing them","Food Standards and Marketing Act - established nutritional labeling requirements","Federal Sanitation and Manufacturing Act - regulated facility inspections","Food Supply Management Act - controlled import regulations only"],
+    ans: 0,
+    exp: "FSMA (Food Safety Modernization Act, 2011) was the most significant overhaul of U.S. food safety law since 1938. It shifted FDA focus from reactive to preventive food safety, requiring hazard analysis, preventive controls for food facilities, produce safety standards, and stronger import controls."
+  },
+  {
+    cat: "regulations",
+    q: "What does the '5/20 rule' mean for interpreting Nutrition Facts labels?",
+    opts: ["5% DV or less is low in a nutrient; 20% DV or more is high","5g fat maximum per serving; 20g carbohydrates maximum","5 calories per serving is negligible; 20 calories is significant","Applies to sodium content only"],
+    ans: 0,
+    exp: "The 5/20 rule is a quick interpretation guide: 5% Daily Value (DV) or less per serving is considered low in a nutrient; 20% DV or more is considered high. This applies to all nutrients on the Nutrition Facts label."
+  },
+  {
+    cat: "regulations",
+    q: "Under FDA regulations, what is the legal threshold for a food to be labeled 'gluten-free'?",
+    opts: ["Zero detectable gluten","Less than 20 ppm of gluten","Less than 100 ppm of gluten","Absence of wheat, rye, and barley ingredients only"],
+    ans: 1,
+    exp: "FDA's gluten-free labeling rule (2013) requires foods labeled gluten-free to contain less than 20 ppm gluten. This threshold is based on evidence that most celiac disease patients can tolerate this level."
+  },
+  {
+    cat: "regulations",
+    q: "What is the serving size on a Nutrition Facts label based on?",
+    opts: ["Manufacturer's recommended portion","The Reference Amount Customarily Consumed (RACC) - amounts people actually eat at one time","One quarter of the package","The smallest amount that provides nutritional benefit"],
+    ans: 1,
+    exp: "FDA requires serving sizes to reflect the Reference Amount Customarily Consumed (RACC) based on food consumption surveys. Manufacturers cannot arbitrarily set serving sizes to manipulate nutritional appearance."
+  },
+  {
+    cat: "regulations",
+    q: "What is the legal definition of 'organic' under the USDA National Organic Program?",
+    opts: ["No pesticides used at any point","Produced using approved methods without synthetic fertilizers, prohibited pesticides, GMOs, irradiation, or sewage sludge","100% natural with no processing","Non-GMO verified product"],
+    ans: 1,
+    exp: "USDA NOP (7 CFR Part 205) requires organic products to be produced without synthetic fertilizers, prohibited pesticides, GMOs, irradiation, or sewage sludge. The USDA Organic seal requires at least 95% organic ingredients from certified operations."
+  },
+  {
+    cat: "regulations",
+    q: "What is a 'health claim' on a food label and what standard must it meet?",
+    opts: ["Any statement about nutritional content per serving","A claim characterizing a relationship between a food or nutrient and a disease, requiring significant scientific agreement","A claim that a food is natural or organic","Any statement the manufacturer chooses to make"],
+    ans: 1,
+    exp: "Health claims describe a relationship between a food or nutrient and a disease (e.g., calcium may reduce risk of osteoporosis). They require FDA authorization based on Significant Scientific Agreement (SSA). Qualified health claims have lower evidence standards but require disclaimers."
+  },
+  {
+    cat: "regulations",
+    q: "What is a 'prior sanctioned substance' in U.S. food law?",
+    opts: ["A substance approved after clinical trials","A substance FDA or USDA explicitly approved for use before the 1958 Food Additive Amendments","A substance that received GRAS status after 1970","A substance approved only for organic foods"],
+    ans: 1,
+    exp: "Prior-sanctioned substances are those FDA or USDA explicitly approved for use in specific foods before the 1958 Food Additive Amendments. Like GRAS substances, they are exempt from the food additive petition process. Sodium nitrite in cured meats is a well-known example."
+  },
+  {
+    cat: "regulations",
+    q: "What is the difference between 'natural flavor' and 'artificial flavor' under FDA regulations?",
+    opts: ["There is no regulatory distinction","Natural flavors are derived from plant or animal sources; artificial flavors are synthesized from non-food sources","Natural flavors must be organic","Artificial flavors require individual FDA approval; natural do not"],
+    ans: 1,
+    exp: "FDA (21 CFR 101.22) defines natural flavors as those derived from plant or animal sources. Artificial flavors are synthesized chemically from non-food sources. Both must be safe; artificial flavors undergo more scrutiny as food additives."
+  },
+  {
+    cat: "regulations",
+    q: "Under FSMA, what is the Preventive Controls for Human Food rule (HARPC)?",
+    opts: ["A voluntary food safety program replacing HACCP","A mandatory requirement for food facilities to conduct hazard analysis and implement preventive controls with a written food safety plan","A labeling requirement for high-risk foods","A certification program for food safety managers"],
+    ans: 1,
+    exp: "FSMA's Preventive Controls rule (21 CFR Part 117) requires food facilities to conduct a hazard analysis, identify preventive controls for significant hazards, implement monitoring, corrective actions, and verification. It applies more broadly than HACCP and requires a written food safety plan."
+  },
+  {
+    cat: "regulations",
+    q: "What is the 'acceptable daily intake' (ADI) used for in food additive safety assessment?",
+    opts: ["The maximum amount of a food that can be consumed daily","The amount of an additive a person can consume every day over a lifetime without appreciable health risk","The minimum effective dose of a food additive","The legal maximum amount of an additive permitted in food"],
+    ans: 1,
+    exp: "The ADI (established by JECFA and regulatory agencies) is the amount of a food additive that can be ingested daily over a lifetime without appreciable health risk. It is typically set at 1/100 of the no-observed-adverse-effect level (NOAEL) from animal studies."
+  },
+  {
+    cat: "regulations",
+    q: "What is the purpose of FDA's GRAS notification program?",
+    opts: ["Mandatory approval process for new food additives","Voluntary program where companies notify FDA of their GRAS determinations; FDA reviews but does not formally approve","Mandatory listing of all GRAS substances","Annual recertification of previously approved substances"],
+    ans: 1,
+    exp: "The GRAS notification program (1997) is voluntary. Companies may notify FDA of their independent GRAS determination and FDA responds with a no questions letter, questions, or cessation of review. Companies can make GRAS determinations without notifying FDA, though notification provides greater regulatory confidence."
+  },
+  {
+    cat: "regulations",
+    q: "What is the legal definition of a food additive under the U.S. FD&C Act?",
+    opts: ["Any substance intentionally added to food","Any substance not GRAS or prior-sanctioned whose intended use results in it becoming a component of food","Vitamins and minerals added for fortification only","Preservatives and colorants only"],
+    ans: 1,
+    exp: "Under the FD&C Act, a food additive is any substance not generally recognized as safe (GRAS) or prior-sanctioned whose intended use results in its becoming a component of food. Manufacturers must obtain FDA approval through a food additive petition."
+  },
+  {
+    cat: "regulations",
+    q: "What does 'net quantity of contents' on a food label represent?",
+    opts: ["Total weight of package including packaging","Weight or volume of the food only, excluding packaging","Number of servings in the package","Drained weight for canned products only"],
+    ans: 1,
+    exp: "Net quantity of contents declares the amount of food in the package, excluding packaging. It must be expressed in both metric and U.S. customary units and placed in the bottom 30% of the principal display panel."
+  },
+  {
+    cat: "regulations",
+    q: "When must a food facility register with the FDA under FSMA?",
+    opts: ["Only if they export products","If they manufacture, process, pack, or hold food for consumption in the U.S.","Only facilities with more than 50 employees","Only if they use food additives"],
+    ans: 1,
+    exp: "Under FSMA and the Bioterrorism Act, domestic and foreign facilities that manufacture, process, pack, or hold food for U.S. consumption must register with FDA. Registration must be renewed biennially. FDA can suspend registration if a facility poses serious health risk."
+  },
+
+  // ── Sensory Science ──
+  {
+    cat: "sensory",
+    q: "What are the five basic tastes recognized in sensory science?",
+    opts: ["Sweet, sour, salty, bitter, spicy","Sweet, sour, salty, bitter, umami","Sweet, sour, salty, bitter, astringent","Sweet, acid, salty, bitter, metallic"],
+    ans: 1,
+    exp: "The five recognized basic tastes are sweet, sour, salty, bitter, and umami (savory). Umami was confirmed as a basic taste in the 1980s-2000s with identification of glutamate receptors. Spicy (capsaicin) is a pain and irritation sensation, not a taste."
+  },
+  {
+    cat: "sensory",
+    q: "What is the triangle test in sensory evaluation?",
+    opts: ["A test using three panelists to evaluate one sample","Presenting three samples (two identical, one different) and asking which is the odd one out","A ranking test of three samples by preference","A test measuring three sensory attributes simultaneously"],
+    ans: 1,
+    exp: "In the triangle test, panelists receive three coded samples - two identical and one different - and must identify the odd sample. It is a forced-choice discrimination test. The probability of correct identification by chance is 1 in 3."
+  },
+  {
+    cat: "sensory",
+    q: "What is the difference between 'flavor' and 'taste' in sensory science?",
+    opts: ["They are synonymous terms","Taste is perception from taste buds on the tongue; flavor is the integrated multimodal perception including taste, aroma, and trigeminal sensations","Flavor is only from smell; taste includes all sensory inputs","Taste is objective; flavor is subjective"],
+    ans: 1,
+    exp: "Taste is detected by taste receptor cells on the tongue (sweet, sour, salty, bitter, umami). Flavor is the complex multimodal perception integrating taste, retronasal aroma (volatiles reaching the olfactory epithelium during eating), and trigeminal sensations (cooling, heat, astringency)."
+  },
+  {
+    cat: "sensory",
+    q: "What is retronasal olfaction and why is it important in flavor perception?",
+    opts: ["Smelling food before it enters the mouth","Aroma compounds traveling from the mouth through the nasopharynx to the olfactory epithelium during eating","The ability to detect off-flavors","Smell perception after nasal congestion"],
+    ans: 1,
+    exp: "Retronasal olfaction occurs when volatile aroma compounds released during chewing travel from the mouth to the olfactory epithelium. This is the primary route of flavor perception during eating, far more important than orthonasal (sniffing) for experiencing food flavor."
+  },
+  {
+    cat: "sensory",
+    q: "What is a Quantitative Descriptive Analysis (QDA) panel?",
+    opts: ["A consumer preference panel of 50-100 untrained participants","A trained panel that develops quantitative language to describe all sensory attributes of a product","A panel that evaluates appearance only","A hedonic scale test for market research"],
+    ans: 1,
+    exp: "QDA (Stone and Sidel, 1974) uses 10-12 trained panelists who collectively develop descriptors and reference standards, then independently rate intensities on unstructured line scales. It provides a complete, reproducible sensory profile used in product development and QC."
+  },
+  {
+    cat: "sensory",
+    q: "What is a hedonic scale used to measure in sensory testing?",
+    opts: ["Intensity of a specific sensory attribute","Overall liking or preference (affective response) to a product","Difference between two samples","Detection threshold for a flavor compound"],
+    ans: 1,
+    exp: "Hedonic scales (most commonly the 9-point scale from 'dislike extremely' to 'like extremely') measure affective responses - how much consumers like a product. They are used in consumer acceptance testing, not by trained descriptive panels."
+  },
+  {
+    cat: "sensory",
+    q: "What is sensory fatigue (adaptation) and why does it matter in panel testing?",
+    opts: ["Physical tiredness of panelists during long sessions","Decreased sensitivity to a stimulus with prolonged exposure, reducing discrimination ability","Increased sensitivity after a break period","Bias introduced by the panel leader"],
+    ans: 1,
+    exp: "Sensory adaptation occurs when repeated exposure to a stimulus reduces perceived intensity. Panel protocols use palate cleansers, rest periods, and limits on sample numbers to minimize adaptation effects and maintain reliable data."
+  },
+  {
+    cat: "sensory",
+    q: "What is 'astringency' and how is it perceived?",
+    opts: ["A basic taste detected by taste receptor cells","A tactile sensation of dryness and puckering caused by tannin-protein precipitation in saliva","A trigeminal sensation similar to spiciness","An aftertaste from acidic foods only"],
+    ans: 1,
+    exp: "Astringency is a mouthfeel sensation - dryness, puckering, roughness - caused by polyphenols (tannins) precipitating salivary proteins, reducing lubrication. It is not a taste but a tactile perception, present in red wine, unripe fruit, strong tea, and dark chocolate."
+  },
+  {
+    cat: "sensory",
+    q: "What is the 'just noticeable difference' (JND) in sensory science?",
+    opts: ["The minimum detectable concentration of a substance","The smallest detectable difference between two stimuli of different intensity","The difference in preference between two products","The threshold above which a stimulus becomes unpleasant"],
+    ans: 1,
+    exp: "The JND (difference threshold) is the smallest change in a stimulus that is perceptible 50% of the time. Weber's Law states JND is proportional to stimulus intensity (change in I divided by I = constant). It governs how much a product must change for consumers to notice - critical in reformulation."
+  },
+  {
+    cat: "sensory",
+    q: "What is the purpose of a reference standard in descriptive sensory analysis?",
+    opts: ["To establish the correct answer for panelists to match","To anchor the meaning of a specific descriptor with a known sample, ensuring consistent terminology across panelists and sessions","To set the minimum acceptable quality level","To train panelists in taste detection thresholds"],
+    ans: 1,
+    exp: "Reference standards are physical examples that anchor the definition of a specific sensory descriptor. For example, a cardboard off-flavor reference might be wet cardboard. They ensure panelists use descriptors consistently across sessions and different laboratories."
+  },
+  {
+    cat: "sensory",
+    q: "What is 'umami' taste and what compound primarily elicits it?",
+    opts: ["A sour taste; primarily from citric acid","A savory, brothy taste; primarily elicited by glutamate (MSG)","A bitter taste from alkaloids; caffeine","A sweet taste from amino acids; glycine"],
+    ans: 1,
+    exp: "Umami is a savory, brothy, meaty taste described by Kikunae Ikeda in 1908. It is primarily elicited by L-glutamate and synergistically enhanced by 5-ribonucleotides (IMP, GMP). Natural sources include tomatoes, aged cheese, mushrooms, soy sauce, and meat stocks."
+  },
+  {
+    cat: "sensory",
+    q: "What is the Scoville scale used to measure?",
+    opts: ["Bitterness of hops in beer","Pungency (heat) of chili peppers based on capsaicinoid content","Sourness of fermented foods","Umami intensity in meat products"],
+    ans: 1,
+    exp: "The Scoville scale measures the pungency of chili peppers. Originally based on sensory dilution (Scoville Heat Units, SHU), now measured by HPLC quantification of capsaicinoids. Pure capsaicin = 16,000,000 SHU; jalapeno = 2,500-8,000 SHU."
+  },
+  {
+    cat: "sensory",
+    q: "What is 'cross-modal interaction' in sensory science?",
+    opts: ["Interaction between two panelists during evaluation","Influence of one sensory modality on the perception of another, such as color affecting taste perception","Statistical interaction between attributes in PCA","Contamination of aroma during visual evaluation"],
+    ans: 1,
+    exp: "Cross-modal interactions occur when one sense influences perception in another modality. Classic examples: red coloring increases perceived sweetness; viscosity increases perceived creaminess; background music affects taste intensity. These interactions are exploited in food marketing."
+  },
+  {
+    cat: "sensory",
+    q: "What is the purpose of a palate cleanser in sensory evaluation?",
+    opts: ["To provide nutrition to panelists between samples","To neutralize the mouth and reset sensory perception between samples, reducing carryover effects","To enhance sensitivity to subsequent samples","To maintain consistent room temperature during testing"],
+    ans: 1,
+    exp: "Palate cleansers (commonly water, unsalted crackers, or apple slices) are used between samples to reduce sensory adaptation and carryover effects, returning the mouth to a neutral baseline for each new sample."
+  },
+  {
+    cat: "sensory",
+    q: "What is Principal Component Analysis (PCA) used for in sensory science?",
+    opts: ["Statistical test to determine if two samples differ significantly","Multivariate technique to reduce dimensionality of descriptive data and visualize product relationships","Method to calculate detection thresholds","Preference mapping for consumer segmentation only"],
+    ans: 1,
+    exp: "PCA reduces complex multivariate sensory data (many attributes across many samples) into a few principal components explaining maximum variance. In sensory science, it creates biplots showing how products relate to each other and which attributes drive differences."
+  },
+  {
+    cat: "sensory",
+    q: "What is the 'halo effect' in sensory evaluation?",
+    opts: ["The positive effect of lighting on product appearance scores","The tendency for one positive attribute to improve ratings of unrelated attributes; controlled by evaluating attributes independently","The impact of panelist fatigue on scores","The effect of sample temperature on flavor intensity"],
+    ans: 1,
+    exp: "The halo effect occurs when a positive impression of one attribute (e.g., appearance) biases ratings of unrelated attributes (e.g., texture, flavor). It is controlled by blind tastings, uniform containers, and training panelists to evaluate each attribute independently."
+  },
+  {
+    cat: "sensory",
+    q: "What is the difference between a trained sensory panel and a consumer panel?",
+    opts: ["Trained panels are larger; consumer panels are smaller","Trained panels are selected and trained to evaluate attributes objectively; consumer panels reflect target market preferences subjectively","Trained panels only evaluate appearance","Consumer panels are more accurate than trained panels"],
+    ans: 1,
+    exp: "Trained panels (8-12 individuals) are screened for sensory acuity and trained to use specific descriptors objectively - they are analytical instruments. Consumer panels (50-300+ untrained individuals) measure affective responses like liking and preference. They answer fundamentally different questions."
+  },
+  {
+    cat: "sensory",
+    q: "What is the detection threshold in sensory science?",
+    opts: ["The concentration at which 100% of panelists detect a stimulus","The lowest concentration of a stimulus that can be detected by 50% of panelists","The concentration causing maximum sensory response","The amount needed to identify the nature of a stimulus"],
+    ans: 1,
+    exp: "The detection threshold (absolute threshold) is the lowest concentration of a stimulus detectable by 50% of the population under defined conditions. The recognition threshold is higher - the concentration at which the stimulus can be correctly identified, not just detected."
+  },
+  {
+    cat: "sensory",
+    q: "What is temporal dominance of sensations (TDS) in sensory methodology?",
+    opts: ["Ranking sensations in order of their appearance","A method where panelists continuously report which sensation is dominant during eating over time","A threshold test measuring time to first detection","A consumer test measuring emotional response over time"],
+    ans: 1,
+    exp: "TDS captures the time evolution of sensory perception during consumption. Panelists continuously click on whichever sensation is dominant at each moment. TDS produces dominance curves showing how different sensations rise and fall during eating, valuable for understanding complex flavor dynamics."
+  },
+  {
+    cat: "sensory",
+    q: "What does orthonasal olfaction refer to?",
+    opts: ["Aroma perceived from inside the mouth during eating","Smelling by sniffing - air and volatile compounds entering through the nostrils","The perception of aroma by the tongue","Detection of trigeminal compounds like menthol"],
+    ans: 1,
+    exp: "Orthonasal olfaction is sniffing - air and volatile compounds entering through the nostrils to reach the olfactory epithelium. This contrasts with retronasal olfaction during eating. Aroma perceived by sniffing a food is often quite different from the flavor experienced while eating the same food."
+  },
+
+  // ── Nutrition ──
+  {
+    cat: "nutrition",
+    q: "What are the Dietary Reference Intakes (DRI) and what values do they include?",
+    opts: ["Single recommended intake values for all nutrients","A set of reference values including EAR, RDA, AI, and UL used for planning and assessing nutrient intakes","Minimum amounts required to prevent deficiency only","Regulatory limits for nutrient content claims on labels"],
+    ans: 1,
+    exp: "DRIs are reference values developed by the National Academies. They include: EAR (Estimated Average Requirement), RDA (Recommended Dietary Allowance - meets needs of 97.5% of population), AI (Adequate Intake), and UL (Tolerable Upper Intake Level)."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the caloric density of carbohydrates, protein, and fat per gram?",
+    opts: ["All provide 4 kcal/g","Carbohydrates 4 kcal/g, protein 4 kcal/g, fat 9 kcal/g","Carbohydrates 4 kcal/g, protein 5 kcal/g, fat 7 kcal/g","Carbohydrates 3 kcal/g, protein 4 kcal/g, fat 9 kcal/g"],
+    ans: 1,
+    exp: "The Atwater general factors: carbohydrates = 4 kcal/g, protein = 4 kcal/g, fat = 9 kcal/g, alcohol = 7 kcal/g. Fat's higher caloric density reflects its more reduced chemical state. These values are used to calculate food energy on Nutrition Facts labels."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the difference between essential and non-essential amino acids?",
+    opts: ["Essential amino acids are more nutritious","Essential amino acids cannot be synthesized by the body at adequate rates and must come from diet; non-essential can be synthesized","Non-essential amino acids are not needed","Essential amino acids are only found in animal proteins"],
+    ans: 1,
+    exp: "There are 9 essential (indispensable) amino acids: histidine, isoleucine, leucine, lysine, methionine, phenylalanine, threonine, tryptophan, valine. Non-essential amino acids can be synthesized from other precursors. Conditionally essential amino acids become essential under specific physiological conditions."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the glycemic index (GI) and how is it measured?",
+    opts: ["The total sugar content of a food","The blood glucose response to 50g available carbohydrate from a test food relative to pure glucose (=100)","The fiber content as a percentage of total carbohydrates","The insulin response to a standard meal"],
+    ans: 1,
+    exp: "GI measures how rapidly a carbohydrate-containing food raises blood glucose. It compares the 2-hour blood glucose area under the curve from 50g available carbohydrate of a test food to 50g glucose. High GI (>70) causes rapid glucose rise; low GI (<55) causes slower, lower responses."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the primary role of dietary fiber in human health?",
+    opts: ["Provides 4 kcal/g like other carbohydrates","Resists digestion in the small intestine; promotes gut health, glycemic control, and cholesterol reduction","Is absorbed directly into the bloodstream","Provides essential amino acids"],
+    ans: 1,
+    exp: "Dietary fiber resists digestion by human enzymes. Soluble fiber (pectin, beta-glucan) forms gels, slowing glucose absorption and reducing LDL cholesterol. Insoluble fiber (cellulose) adds bulk, promoting regularity. Fiber is fermented by gut microbiota to produce short-chain fatty acids."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the role of vitamin D in the body?",
+    opts: ["Primary antioxidant vitamin","Hormone-like vitamin regulating calcium absorption, bone mineralization, and immune function","Water-soluble vitamin essential for collagen synthesis","B-vitamin essential for energy metabolism"],
+    ans: 1,
+    exp: "Vitamin D functions as a steroid hormone prohormone. Its active form (calcitriol) regulates calcium and phosphorus absorption in the gut, promotes bone mineralization, modulates immune function, and influences cell differentiation. Deficiency causes rickets in children and osteomalacia in adults."
+  },
+  {
+    cat: "nutrition",
+    q: "What are omega-3 fatty acids and what are their primary food sources?",
+    opts: ["Saturated fats found in coconut oil","Polyunsaturated fatty acids (ALA, EPA, DHA) with first double bond at carbon-3; found in fatty fish, flaxseed, and walnuts","Monounsaturated fats found primarily in olive oil","Trans fats produced by partial hydrogenation"],
+    ans: 1,
+    exp: "Omega-3 fatty acids have their first double bond at the third carbon from the methyl end. ALA is the plant-based essential omega-3 (flaxseed, chia, walnuts). EPA and DHA are long-chain omega-3s in fatty fish (salmon, mackerel) with cardioprotective and anti-inflammatory effects."
+  },
+  {
+    cat: "nutrition",
+    q: "What is iron bioavailability and what factors affect it?",
+    opts: ["Iron bioavailability is constant regardless of food source","Heme iron from meat is more bioavailable (~25%) than non-heme iron (~5%); vitamin C enhances absorption; phytates and polyphenols inhibit it","All iron forms are equally absorbed","Cooking always reduces iron bioavailability"],
+    ans: 1,
+    exp: "Heme iron (from hemoglobin and myoglobin in meat) is absorbed at 15-35%. Non-heme iron (plants, fortified foods) is absorbed at 2-20% and is highly influenced by diet. Vitamin C and meat factor enhance absorption; phytates, polyphenols, calcium, and high pH inhibit it."
+  },
+  {
+    cat: "nutrition",
+    q: "What is PDCAAS (Protein Digestibility Corrected Amino Acid Score) used for?",
+    opts: ["Measuring total protein content of a food","Evaluating protein quality based on amino acid composition relative to human needs and true digestibility","Calculating the caloric contribution of protein","Determining protein solubility in food systems"],
+    ans: 1,
+    exp: "PDCAAS = (limiting amino acid ratio to reference pattern) times true fecal digestibility. A score of 1.0 indicates the protein fully meets human amino acid requirements after digestion. Egg white, casein, and soy protein isolate score 1.0; wheat gluten scores approximately 0.25 due to lysine limitation."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the role of folate (vitamin B9) during pregnancy?",
+    opts: ["Essential for calcium absorption","Critical for neural tube closure in early fetal development; deficiency causes neural tube defects","Prevents gestational diabetes","Required for iron absorption during pregnancy"],
+    ans: 1,
+    exp: "Folate is essential for DNA synthesis and cell division. During early pregnancy (first 28 days), adequate folate is critical for neural tube closure. Deficiency causes neural tube defects like spina bifida. The FDA mandates folic acid fortification of enriched grain products for this reason."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the function of antioxidant vitamins C and E in the body?",
+    opts: ["Primary energy sources","Neutralize free radicals protecting cell membranes, DNA, and proteins from oxidative damage","Enzyme cofactors for digestion only","Structural components of cell membranes"],
+    ans: 1,
+    exp: "Vitamins C and E are antioxidants that donate electrons to neutralize reactive oxygen species (ROS). Vitamin E (tocopherol) is fat-soluble, protecting cell membranes from lipid peroxidation. Vitamin C (ascorbic acid) is water-soluble, regenerating vitamin E and directly scavenging ROS."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the difference between probiotics and prebiotics?",
+    opts: ["They are the same thing","Probiotics are live beneficial microorganisms; prebiotics are non-digestible food components that selectively stimulate beneficial gut bacteria","Prebiotics are live cultures; probiotics are fiber compounds","Both are live microorganisms from different sources"],
+    ans: 1,
+    exp: "Probiotics are live microorganisms that confer a health benefit when consumed in adequate amounts (e.g., Lactobacillus, Bifidobacterium in yogurt). Prebiotics are selectively fermented dietary components (e.g., inulin, FOS) that promote growth of beneficial gut bacteria. Synbiotics combine both."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the concept of 'nutrient density' in nutrition?",
+    opts: ["Total number of nutrients per gram","Amount of beneficial nutrients relative to the caloric content of a food","Total caloric content of a food","Concentration of macronutrients only"],
+    ans: 1,
+    exp: "Nutrient density refers to the concentration of essential nutrients (vitamins, minerals, fiber, protein) relative to caloric content. Nutrient-dense foods provide substantial nutrients with relatively few calories (e.g., leafy greens, legumes). Empty-calorie foods provide energy with few nutrients."
+  },
+  {
+    cat: "nutrition",
+    q: "What is 'food fortification' and give an example in the U.S. food supply?",
+    opts: ["Adding preservatives to extend shelf life","Adding nutrients to food to prevent deficiency or restore nutrients lost in processing; example: folic acid in enriched grain products","Removing harmful substances from food","Organic farming practices to improve nutrient density"],
+    ans: 1,
+    exp: "Food fortification adds nutrients to foods to prevent deficiency diseases or restore processing losses. Mandatory U.S. examples include iodine in salt (prevent goiter), folic acid in enriched grains (prevent neural tube defects), vitamin D in milk (prevent rickets), and iron in cereals."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the recommended daily intake of dietary fiber for adults according to the Dietary Guidelines for Americans?",
+    opts: ["10-15 g/day","25-38 g/day (25g for women, 38g for men)","50-60 g/day","5-10 g/day"],
+    ans: 1,
+    exp: "The Adequate Intake (AI) for fiber is 25 g/day for adult women and 38 g/day for adult men (based on 14g per 1,000 kcal). The average American consumes only about 15g/day. The 2020-2025 Dietary Guidelines identify fiber as a nutrient of public health concern due to widespread underconsumption."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the role of sodium in human physiology and why is excess a concern?",
+    opts: ["Sodium is needed for bone formation only","Sodium maintains fluid balance, nerve impulse transmission, and muscle contraction; excess raises blood pressure and cardiovascular disease risk","Sodium has no role in nerve function","Excess sodium causes only kidney disease"],
+    ans: 1,
+    exp: "Sodium (Na+) is the primary extracellular cation, maintaining osmotic balance, blood volume, and membrane potential for nerve and muscle function. Excess dietary sodium (above 2,300 mg/day) increases extracellular fluid volume, raises blood pressure, and is a major modifiable risk factor for cardiovascular disease."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the difference between water-soluble and fat-soluble vitamins in terms of storage and toxicity risk?",
+    opts: ["Fat-soluble vitamins are excreted quickly; water-soluble are stored","Water-soluble vitamins (B, C) are excreted in urine; fat-soluble vitamins (A, D, E, K) are stored in liver and fat and can accumulate to toxic levels","Both types are stored equally","Water-soluble vitamins are more likely to cause toxicity"],
+    ans: 1,
+    exp: "Water-soluble vitamins (B-complex, C) are not stored long-term - excess is excreted in urine, so toxicity is rare but regular intake is needed. Fat-soluble vitamins (A, D, E, K) are stored in liver and adipose tissue, making excess supplementation potentially toxic, especially for vitamins A and D."
+  },
+  {
+    cat: "nutrition",
+    q: "What is zinc's primary role in human nutrition?",
+    opts: ["Oxygen transport in blood","Structural and catalytic component of over 300 enzymes; essential for immune function, wound healing, and protein synthesis","Primary energy substrate","Calcium absorption cofactor only"],
+    ans: 1,
+    exp: "Zinc is essential for the structure and function of over 300 enzymes involved in DNA synthesis, protein metabolism, and antioxidant defense. It is critical for immune function, wound healing, taste and smell perception, and growth. Deficiency causes growth retardation and immune dysfunction."
+  },
+  {
+    cat: "nutrition",
+    q: "What is the difference between type 1 and type 2 diabetes from a nutrition perspective?",
+    opts: ["They are the same condition treated differently","Type 1 is autoimmune destruction of insulin-producing cells requiring insulin therapy; Type 2 is insulin resistance often associated with obesity and manageable with diet","Type 2 is more severe than Type 1","Type 1 is caused by diet; Type 2 is genetic only"],
+    ans: 1,
+    exp: "Type 1 diabetes is an autoimmune condition where the pancreas produces little or no insulin, requiring insulin replacement therapy. Type 2 is characterized by insulin resistance and relative insulin deficiency, strongly associated with obesity and inactivity. Type 2 can often be managed with diet and exercise."
+  },
+  {
+    cat: "nutrition",
+    q: "What is 'bioavailability' in the context of food nutrients?",
+    opts: ["The total amount of a nutrient in a food","The proportion of a nutrient that is digested, absorbed, and utilized for normal body functions","The stability of a nutrient during food processing","The minimum amount of a nutrient required to prevent deficiency"],
+    ans: 1,
+    exp: "Bioavailability is the fraction of an ingested nutrient that is absorbed and becomes available for use by the body. It depends on the food matrix, nutrient form, processing, and individual factors (age, health status, other dietary components). For example, iron bioavailability from meat is far higher than from spinach."
+  }
+
+];
+
+// ══════════════════════════════════════════
+//  CATEGORY TRACKING (localStorage)
+// ══════════════════════════════════════════
+const CAT_LABELS = {
+  chemistry:    '⚗️ Food Chemistry',
+  microbiology: '🦠 Microbiology',
+  processing:   '🏭 Processing',
+  regulations:  '📋 Regulations',
+  sensory:      '👅 Sensory Science',
+  nutrition:    '🥗 Nutrition'
+};
+
+function loadTracking() {
+  try {
+    return JSON.parse(localStorage.getItem('foodbowl_tracking') || '{}');
+  } catch { return {}; }
+}
+
+function saveTracking(data) {
+  try { localStorage.setItem('foodbowl_tracking', JSON.stringify(data)); } catch {}
+}
+
+function recordAnswer(cat, correct) {
+  const data = loadTracking();
+  if (!data[cat]) data[cat] = { correct: 0, total: 0 };
+  data[cat].total++;
+  if (correct) data[cat].correct++;
+  saveTracking(data);
+}
+
+function clearTracking() {
+  localStorage.removeItem('foodbowl_tracking');
+}
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let state = {
+  category: 'all',
+  timerSec: 30,
+  deck: [],
+  idx: 0,
+  score: 0,
+  streak: 0,
+  bestStreak: 0,
+  answered: false,
+  timerInterval: null
+};
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+function init() {
+  // populate counts
+  const cats = ['all','chemistry','microbiology','processing','regulations','sensory','nutrition'];
+  cats.forEach(c => {
+    const count = c === 'all' ? QUESTIONS.length : QUESTIONS.filter(q => q.cat === c).length;
+    const el = document.getElementById('cnt-' + c);
+    if (el) el.textContent = count + ' questions';
+  });
+
+  // category buttons
+  document.getElementById('cat-grid').addEventListener('click', e => {
+    const btn = e.target.closest('.cat-btn');
+    if (!btn) return;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.category = btn.dataset.cat;
+  });
+
+  document.getElementById('start-btn').addEventListener('click', startQuiz);
+  document.getElementById('quit-btn').addEventListener('click', goHome);
+  document.getElementById('next-btn').addEventListener('click', nextQuestion);
+  document.getElementById('retry-btn').addEventListener('click', () => startQuiz());
+  document.getElementById('home-btn').addEventListener('click', goHome);
+  document.getElementById('clear-tracking-btn').addEventListener('click', () => {
+    clearTracking();
+    document.getElementById('tracking-panel').style.display = 'none';
+  });
+
+  // timer select
+  document.querySelectorAll('.timer-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.timer-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.timerSec = parseInt(btn.dataset.sec);
+    });
+  });
+}
+
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() { stopTimer(); stopSpeech(); show('home'); }
+
+// ══════════════════════════════════════════
+//  QUIZ LOGIC
+// ══════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ══════════════════════════════════════════
+//  TIMER
+// ══════════════════════════════════════════
+function startTimer() {
+  clearInterval(state.timerInterval);
+  if (!state.timerSec) {
+    document.getElementById('timer-display').style.display = 'none';
+    return;
+  }
+  const display = document.getElementById('timer-display');
+  const numEl   = document.getElementById('timer-num');
+  const ring    = document.getElementById('timer-ring');
+  const total   = state.timerSec;
+  const circum  = 94.2;
+  display.style.display = 'flex';
+  display.classList.remove('urgent');
+
+  let remaining = total;
+  const tick = () => {
+    numEl.textContent = remaining;
+    const offset = circum * (1 - remaining / total);
+    ring.style.strokeDashoffset = offset;
+    if (remaining <= 5) display.classList.add('urgent');
+    if (remaining <= 0) {
+      clearInterval(state.timerInterval);
+      timeUp();
+    }
+    remaining--;
+  };
+  tick();
+  state.timerInterval = setInterval(tick, 1000);
+}
+
+function stopTimer() {
+  clearInterval(state.timerInterval);
+}
+
+function timeUp() {
+  if (state.answered) return;
+  state.answered = true;
+  const q = state.deck[state.idx];
+  const allBtns = document.querySelectorAll('.opt');
+  const shuffledOpts = [...allBtns].map((_, i) => ({ orig: parseInt(allBtns[i].dataset.orig) }));
+  allBtns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (parseInt(btn.dataset.orig) === q.ans) btn.classList.add('correct');
+  });
+  document.getElementById('exp-text').textContent = "⏱ Time's up! — " + q.exp;
+  document.getElementById('exp-box').classList.add('show');
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.textContent = state.idx < state.deck.length - 1 ? 'Next question →' : 'See results →';
+  nextBtn.classList.add('show');
+}
+
+// ══════════════════════════════════════════
+//  TEXT-TO-SPEECH
+// ══════════════════════════════════════════
+const tts = window.speechSynthesis;
+let ttsUtterance = null;
+
+function speakQuestion(text) {
+  if (!tts) return;
+  tts.cancel();
+  ttsUtterance = new SpeechSynthesisUtterance(text);
+  ttsUtterance.lang = 'en-US';
+  ttsUtterance.rate = 0.92;
+  ttsUtterance.pitch = 1;
+
+  const btn = document.getElementById('tts-btn');
+  btn.classList.add('speaking');
+
+  ttsUtterance.onend = () => btn.classList.remove('speaking');
+  ttsUtterance.onerror = () => btn.classList.remove('speaking');
+
+  tts.speak(ttsUtterance);
+}
+
+function stopSpeech() {
+  if (tts) tts.cancel();
+  const btn = document.getElementById('tts-btn');
+  if (btn) btn.classList.remove('speaking');
+}
+
+function startQuiz() {
+  const pool = state.category === 'all'
+    ? QUESTIONS
+    : QUESTIONS.filter(q => q.cat === state.category);
+  state.deck = shuffle(pool);
+  state.idx = 0;
+  state.score = 0;
+  state.streak = 0;
+  state.bestStreak = 0;
+  state.answered = false;
+  show('quiz');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = state.deck[state.idx];
+  const total = state.deck.length;
+
+  // progress
+  document.getElementById('prog-fill').style.width = (state.idx / total * 100) + '%';
+  document.getElementById('q-counter').textContent = `Q ${state.idx + 1} of ${total}`;
+  document.getElementById('cat-label').textContent = q.cat;
+  document.getElementById('live-score').textContent = state.score;
+
+  // question
+  document.getElementById('q-cat-tag').textContent = q.cat.toUpperCase();
+  document.getElementById('q-text').textContent = q.q;
+
+  // options
+  const letters = ['A','B','C','D'];
+  const optWrap = document.getElementById('options');
+  optWrap.innerHTML = '';
+  const shuffledOpts = shuffle(q.opts.map((text, i) => ({ text, orig: i })));
+
+  shuffledOpts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.dataset.orig = opt.orig;
+    btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span>${opt.text}</span>`;
+    btn.addEventListener('click', () => handleAnswer(btn, opt.orig, q.ans, shuffledOpts, q.exp));
+    optWrap.appendChild(btn);
+  });
+
+  // reset feedback
+  document.getElementById('exp-box').classList.remove('show');
+  document.getElementById('next-btn').classList.remove('show');
+  state.answered = false;
+  startTimer();
+
+  // TTS button
+  const ttsBtn = document.getElementById('tts-btn');
+  ttsBtn.onclick = () => {
+    if (tts.speaking) { stopSpeech(); return; }
+    speakQuestion(q.q);
+  };
+}
+
+function handleAnswer(clickedBtn, chosenOrig, correctOrig, shuffledOpts, exp) {
+  if (state.answered) return;
+  state.answered = true;
+  stopTimer();
+  stopSpeech();
+
+  const allBtns = document.querySelectorAll('.opt');
+
+  allBtns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (shuffledOpts[i].orig === correctOrig) btn.classList.add('correct');
+  });
+
+  if (chosenOrig === correctOrig) {
+    state.score++;
+    state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    recordAnswer(state.deck[state.idx].cat, true);
+  } else {
+    state.streak = 0;
+    recordAnswer(state.deck[state.idx].cat, false);
+  }
+
+  // update streak display
+  const streakEl = document.getElementById('streak-display');
+  if (state.streak >= 2) {
+    streakEl.style.display = 'flex';
+    document.getElementById('streak-num').textContent = state.streak;
+    streakEl.classList.remove('pop');
+    void streakEl.offsetWidth;
+    streakEl.classList.add('pop');
+  } else {
+    streakEl.style.display = 'none';
+  }
+
+  if (chosenOrig !== correctOrig) clickedBtn.classList.add('wrong');
+
+  document.getElementById('live-score').textContent = state.score;
+  document.getElementById('exp-text').textContent = exp;
+  document.getElementById('exp-box').classList.add('show');
+
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.textContent = state.idx < state.deck.length - 1 ? 'Next question →' : 'See results →';
+  nextBtn.classList.add('show');
+}
+
+function nextQuestion() {
+  state.idx++;
+  if (state.idx >= state.deck.length) {
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResult() {
+  const total = state.deck.length;
+  const pct = Math.round(state.score / total * 100);
+
+  document.getElementById('res-score').textContent = state.score;
+  document.getElementById('res-denom').textContent = `out of ${total} correct · ${pct}% · best streak ${state.bestStreak}🔥`;
+
+  let msg, sub;
+  if (pct === 100) {
+    msg = "Perfect score. Bowl-ready.";
+    sub = "You nailed every question. Consider tackling a harder category.";
+  } else if (pct >= 80) {
+    msg = "Strong performance.";
+    sub = "Review the explanations on the ones you missed and drill again.";
+  } else if (pct >= 60) {
+    msg = "Solid foundation.";
+    sub = "Focus on the topics where you hesitated. Repeat the category.";
+  } else {
+    msg = "Keep drilling.";
+    sub = "Read through all the explanations — they're your study notes.";
+  }
+
+  document.getElementById('res-msg').textContent = msg;
+  document.getElementById('res-sub').textContent = sub;
+
+  // ── render tracking panel ──
+  const tracking = loadTracking();
+  const panel = document.getElementById('tracking-panel');
+  const cats = Object.keys(CAT_LABELS);
+  const hasData = cats.some(c => tracking[c] && tracking[c].total > 0);
+
+  if (hasData) {
+    let html = '<div class="tracking-title">Cumulative accuracy by category</div>';
+    cats.forEach(c => {
+      const d = tracking[c];
+      if (!d || d.total === 0) return;
+      const pct = Math.round(d.correct / d.total * 100);
+      const cls = pct >= 75 ? 'tracking-strong' : pct >= 50 ? 'tracking-mid' : 'tracking-weak';
+      const color = pct >= 75 ? 'var(--accent)' : pct >= 50 ? '#f0a500' : 'var(--danger)';
+      html += `
+        <div class="tracking-row">
+          <div class="tracking-cat">${CAT_LABELS[c]}</div>
+          <div class="tracking-bar-wrap">
+            <div class="tracking-bar-fill" style="width:${pct}%; background:${color}"></div>
+          </div>
+          <div class="tracking-pct ${cls}">${pct}%</div>
+        </div>`;
+    });
+    html += `<div style="font-size:0.68rem;color:var(--muted);margin-top:0.5rem;text-align:left">`;
+    html += cats.filter(c => tracking[c] && tracking[c].total > 0)
+               .map(c => `${CAT_LABELS[c].split(' ').slice(1).join(' ')}: ${tracking[c].correct}/${tracking[c].total}`)
+               .join(' · ');
+    html += '</div>';
+    panel.innerHTML = html;
+    panel.style.display = 'block';
+  } else {
+    panel.style.display = 'none';
+  }
+
+  // re-animate result screen
+  const screen = document.getElementById('result');
+  screen.querySelectorAll('[style*="animation"]').forEach(el => {
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+  });
+
+  show('result');
+}
+
+// ══════════════════════════════════════════
+//  PWA: SERVICE WORKER + INSTALL PROMPT
+// ══════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+
+document.getElementById('install-yes').addEventListener('click', async () => {
+  document.getElementById('install-banner').classList.remove('show');
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  }
+});
+
+document.getElementById('install-no').addEventListener('click', () => {
+  document.getElementById('install-banner').classList.remove('show');
+});
+
+// ══════════════════════════════════════════
+//  START
+// ══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>

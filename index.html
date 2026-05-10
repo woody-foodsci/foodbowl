@@ -734,6 +734,17 @@
       </div>
     </div>
 
+    <div class="diff-select" id="count-select">
+      <div class="timer-label">Questions per round</div>
+      <div class="timer-opts">
+        <button class="timer-btn" data-count="10">10</button>
+        <button class="timer-btn selected" data-count="20">20</button>
+        <button class="timer-btn" data-count="30">30</button>
+        <button class="timer-btn" data-count="50">50</button>
+        <button class="timer-btn" data-count="0">All In</button>
+      </div>
+    </div>
+
     <div class="diff-select" id="diff-select">
       <div class="timer-label">Difficulty</div>
       <div class="timer-opts">
@@ -1916,6 +1927,7 @@ function clearTracking() {
 let state = {
   category: 'all',
   difficulty: 'all',
+  qCount: 20,
   timerSec: 30,
   deck: [],
   idx: 0,
@@ -1951,7 +1963,7 @@ function init() {
   });
 
   document.getElementById('start-btn').addEventListener('click', startQuiz);
-  document.getElementById('quit-btn').addEventListener('click', goHome);
+  document.getElementById('quit-btn').addEventListener('click', quitToResult);
   document.getElementById('next-btn').addEventListener('click', nextQuestion);
   document.getElementById('retry-btn').addEventListener('click', () => startQuiz());
   document.getElementById('home-btn').addEventListener('click', goHome);
@@ -1966,6 +1978,15 @@ function init() {
       document.querySelectorAll('#timer-select .timer-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       state.timerSec = parseInt(btn.dataset.sec);
+    });
+  });
+
+  // count select
+  document.querySelectorAll('#count-select .timer-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#count-select .timer-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.qCount = parseInt(btn.dataset.count);
     });
   });
 
@@ -1993,6 +2014,16 @@ function show(id) {
 }
 
 function goHome() { stopTimer(); stopSpeech(); show('home'); updateReviewBtn(); }
+
+function quitToResult() {
+  stopTimer();
+  stopSpeech();
+  const answeredCount = state.answered ? state.idx + 1 : state.idx;
+  if (answeredCount === 0) { goHome(); return; }
+  state.deck = state.deck.slice(0, answeredCount);
+  state.idx = answeredCount - 1;
+  showResult();
+}
 
 // ══════════════════════════════════════════
 //  QUIZ LOGIC
@@ -2106,6 +2137,10 @@ function startQuiz() {
     state.deck = shuffle(filtered.length ? filtered : pool);
   } else {
     state.deck = shuffle(pool);
+  }
+
+  if (state.qCount > 0 && state.deck.length > state.qCount) {
+    state.deck = state.deck.slice(0, state.qCount);
   }
 
   state.idx = 0;

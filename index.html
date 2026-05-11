@@ -674,6 +674,65 @@
     max-width: 380px;
     margin: 0 0 1.5rem;
   }
+
+  /* ── short answer input ── */
+  .sa-area {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .sa-input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-m);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+    -webkit-appearance: none;
+  }
+  .sa-input::placeholder { color: var(--muted); }
+  .sa-input:focus { border-color: var(--accent); }
+  .sa-input.correct { border-color: var(--accent); background: #0d1f18; }
+  .sa-input.wrong   { border-color: var(--danger);  background: #1a0c0e; }
+  .sa-input:disabled { opacity: 1; }
+
+  .sa-submit-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    color: var(--accent);
+    font-family: var(--font-d);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .sa-submit-btn:hover:not(:disabled) { background: var(--accent); color: #0a0f0d; }
+  .sa-submit-btn:disabled { opacity: 0.35; cursor: default; }
+
+  .sa-verdict {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+  }
+  .sa-verdict.ok { color: var(--accent); }
+  .sa-verdict.no { color: var(--danger); }
+
+  .sa-correct-text {
+    font-family: var(--font-d);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+  }
 </style>
 </head>
 <body>
@@ -722,6 +781,15 @@
         <div class="cat-name">Nutrition</div>
         <div class="cat-count" id="cnt-nutrition">— questions</div>
       </button>
+    </div>
+
+    <div class="diff-select" id="type-select">
+      <div class="timer-label">Question type</div>
+      <div class="timer-opts">
+        <button class="timer-btn selected" data-qtype="mcq">MCQ</button>
+        <button class="timer-btn" data-qtype="sa">Short Answer</button>
+        <button class="timer-btn" data-qtype="both">Mixed</button>
+      </div>
     </div>
 
     <div class="timer-select" id="timer-select">
@@ -799,6 +867,15 @@
         </button>
       </div>
       <div class="options" id="options"></div>
+      <div class="sa-area" id="sa-area" style="display:none">
+        <input type="text" id="sa-input" class="sa-input" placeholder="Type your answer…"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <button class="sa-submit-btn" id="sa-submit-btn">Submit →</button>
+        <div id="sa-result" style="display:none">
+          <div class="sa-verdict" id="sa-verdict"></div>
+          <div class="sa-correct-text" id="sa-correct-text"></div>
+        </div>
+      </div>
     </div>
     <div class="exp-box" id="exp-box"><strong>Explanation</strong><span id="exp-text"></span></div>
     <div class="next-wrap">
@@ -1862,6 +1939,44 @@ const QUESTIONS = [
     exp: "Bioavailability is the fraction of an ingested nutrient that is absorbed and becomes available for use by the body. It depends on the food matrix, nutrient form, processing, and individual factors (age, health status, other dietary components). For example, iron bioavailability from meat is far higher than from spinach."
   }
 
+  // ── Short Answer examples ──
+  ,{
+    type: "sa",
+    cat: "chemistry",
+    q: "Name the non-enzymatic browning reaction between reducing sugars and amino acids that produces flavor and color compounds in cooked foods.",
+    answers: ["maillard reaction", "maillard", "maillard browning", "the maillard reaction"],
+    exp: "The Maillard reaction occurs between reducing sugars and amino groups, beginning around 140–165°C. It produces hundreds of flavor and color compounds in bread crust, roasted meats, coffee, and other thermally processed foods.",
+    diff: 1
+  },{
+    type: "sa",
+    cat: "microbiology",
+    q: "What term describes the time in minutes required to reduce a microbial population by 90% (one log cycle) at a specific constant temperature?",
+    answers: ["d-value", "d value", "decimal reduction time", "decimal reduction value"],
+    exp: "The D-value (decimal reduction time) is the time at a given temperature needed to reduce a microbial population by 1 log (90%). It characterizes heat resistance and is used to design thermal processes.",
+    diff: 1
+  },{
+    type: "sa",
+    cat: "processing",
+    q: "What does HTST stand for in the context of milk pasteurization?",
+    answers: ["high temperature short time", "high-temperature short-time"],
+    exp: "HTST (High Temperature Short Time) pasteurization heats milk to 72°C (161°F) for at least 15 seconds, destroying vegetative pathogens while preserving sensory quality better than older batch pasteurization.",
+    diff: 1
+  },{
+    type: "sa",
+    cat: "regulations",
+    q: "In parts per million, what is the FDA's maximum allowable gluten content for a food to be labeled 'gluten-free'?",
+    answers: ["20", "20 ppm", "less than 20", "fewer than 20", "under 20"],
+    exp: "FDA's gluten-free labeling rule (2013) requires foods to contain less than 20 ppm gluten. This threshold is based on evidence that most individuals with celiac disease can tolerate this level without adverse effects.",
+    diff: 2
+  },{
+    type: "sa",
+    cat: "sensory",
+    q: "What Japanese-derived term names the fifth basic taste, primarily elicited by glutamate and associated with savory or brothy flavors?",
+    answers: ["umami"],
+    exp: "Umami was identified by Kikunae Ikeda in 1908. It is primarily elicited by L-glutamate and synergistically enhanced by 5'-ribonucleotides (IMP, GMP). Found in tomatoes, aged cheese, mushrooms, soy sauce, and meat stocks.",
+    diff: 1
+  }
+
 ];
 
 // Difficulty levels per question in order (1=Easy, 2=Medium, 3=Hard)
@@ -1885,7 +2000,10 @@ const DIFFICULTIES = [
   // Nutrition (20)
   2, 1, 1, 2, 1, 2, 1, 2, 3, 2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1
 ];
-QUESTIONS.forEach((q, i) => { q.diff = DIFFICULTIES[i] || 2; });
+QUESTIONS.forEach((q, i) => {
+  q.diff = DIFFICULTIES[i] || 2;
+  if (!q.type) q.type = 'mcq';
+});
 
 // ══════════════════════════════════════════
 //  CATEGORY TRACKING (localStorage)
@@ -1927,6 +2045,7 @@ function clearTracking() {
 let state = {
   category: 'all',
   difficulty: 'all',
+  qType: 'mcq',
   qCount: 20,
   timerSec: 30,
   deck: [],
@@ -1981,6 +2100,21 @@ function init() {
     });
   });
 
+  // type select (MCQ / SA / Mixed)
+  document.querySelectorAll('#type-select .timer-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#type-select .timer-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.qType = btn.dataset.qtype;
+    });
+  });
+
+  // SA submit
+  document.getElementById('sa-submit-btn').addEventListener('click', handleSASubmit);
+  document.getElementById('sa-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleSASubmit();
+  });
+
   // count select
   document.querySelectorAll('#count-select .timer-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2028,6 +2162,83 @@ function quitToResult() {
 // ══════════════════════════════════════════
 //  QUIZ LOGIC
 // ══════════════════════════════════════════
+function normalizeAnswer(str) {
+  return str.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+}
+function checkSAAnswer(input, answers) {
+  const n = normalizeAnswer(input);
+  return answers.some(a => normalizeAnswer(a) === n);
+}
+
+function applyResult(correct) {
+  const q = state.deck[state.idx];
+  if (correct) {
+    state.score++;
+    state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    recordAnswer(q.cat, true);
+    removeWrong(q);
+  } else {
+    state.streak = 0;
+    recordAnswer(q.cat, false);
+    addWrong(q);
+  }
+  state.recentAnswers.push(correct);
+  evaluateAdaptive();
+
+  const streakEl = document.getElementById('streak-display');
+  if (state.streak >= 2) {
+    streakEl.style.display = 'flex';
+    document.getElementById('streak-num').textContent = state.streak;
+    streakEl.classList.remove('pop');
+    void streakEl.offsetWidth;
+    streakEl.classList.add('pop');
+  } else {
+    streakEl.style.display = 'none';
+  }
+
+  document.getElementById('live-score').textContent = state.score;
+  document.getElementById('exp-box').classList.add('show');
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.textContent = state.idx < state.deck.length - 1 ? 'Next question →' : 'See results →';
+  nextBtn.classList.add('show');
+}
+
+function handleSASubmit() {
+  if (state.answered) return;
+  const input = document.getElementById('sa-input');
+  const answer = input.value.trim();
+  if (!answer) return;
+
+  state.answered = true;
+  stopTimer();
+  stopSpeech();
+
+  const q = state.deck[state.idx];
+  const correct = checkSAAnswer(answer, q.answers);
+
+  input.classList.add(correct ? 'correct' : 'wrong');
+  input.disabled = true;
+  document.getElementById('sa-submit-btn').disabled = true;
+
+  const resultEl = document.getElementById('sa-result');
+  resultEl.style.display = 'block';
+  const verdictEl = document.getElementById('sa-verdict');
+  const correctTextEl = document.getElementById('sa-correct-text');
+  if (correct) {
+    verdictEl.className = 'sa-verdict ok';
+    verdictEl.textContent = '✓ Correct!';
+    correctTextEl.textContent = '';
+  } else {
+    verdictEl.className = 'sa-verdict no';
+    verdictEl.textContent = '✗ Answer:';
+    correctTextEl.textContent = q.answers[0];
+  }
+
+  document.getElementById('exp-text').textContent = q.exp;
+  applyResult(correct);
+}
+
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -2078,17 +2289,26 @@ function timeUp() {
   if (state.answered) return;
   state.answered = true;
   const q = state.deck[state.idx];
-  const allBtns = document.querySelectorAll('.opt');
-  const shuffledOpts = [...allBtns].map((_, i) => ({ orig: parseInt(allBtns[i].dataset.orig) }));
-  allBtns.forEach((btn, i) => {
-    btn.disabled = true;
-    if (parseInt(btn.dataset.orig) === q.ans) btn.classList.add('correct');
-  });
-  document.getElementById('exp-text').textContent = "⏱ Time's up! — " + q.exp;
-  document.getElementById('exp-box').classList.add('show');
-  const nextBtn = document.getElementById('next-btn');
-  nextBtn.textContent = state.idx < state.deck.length - 1 ? 'Next question →' : 'See results →';
-  nextBtn.classList.add('show');
+
+  if (q.type === 'sa') {
+    const input = document.getElementById('sa-input');
+    input.disabled = true;
+    input.classList.add('wrong');
+    document.getElementById('sa-submit-btn').disabled = true;
+    const resultEl = document.getElementById('sa-result');
+    resultEl.style.display = 'block';
+    document.getElementById('sa-verdict').className = 'sa-verdict no';
+    document.getElementById('sa-verdict').textContent = "⏱ Time's up! Answer:";
+    document.getElementById('sa-correct-text').textContent = q.answers[0];
+    document.getElementById('exp-text').textContent = q.exp;
+  } else {
+    document.querySelectorAll('.opt').forEach(btn => {
+      btn.disabled = true;
+      if (parseInt(btn.dataset.orig) === q.ans) btn.classList.add('correct');
+    });
+    document.getElementById('exp-text').textContent = "⏱ Time's up! — " + q.exp;
+  }
+  applyResult(false);
 }
 
 // ══════════════════════════════════════════
@@ -2124,6 +2344,10 @@ function startQuiz() {
   let pool = state.category === 'all'
     ? [...QUESTIONS]
     : QUESTIONS.filter(q => q.cat === state.category);
+
+  if (state.qType !== 'both') {
+    pool = pool.filter(q => q.type === state.qType);
+  }
 
   if (state.difficulty === 'adaptive') {
     const d2 = shuffle(pool.filter(q => q.diff === 2));
@@ -2170,20 +2394,35 @@ function renderQuestion() {
   document.getElementById('q-cat-tag').textContent = q.cat.toUpperCase();
   document.getElementById('q-text').textContent = q.q;
 
-  // options
-  const letters = ['A','B','C','D'];
+  // MCQ or SA display
   const optWrap = document.getElementById('options');
-  optWrap.innerHTML = '';
-  const shuffledOpts = shuffle(q.opts.map((text, i) => ({ text, orig: i })));
+  const saArea  = document.getElementById('sa-area');
 
-  shuffledOpts.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'opt';
-    btn.dataset.orig = opt.orig;
-    btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span>${opt.text}</span>`;
-    btn.addEventListener('click', () => handleAnswer(btn, opt.orig, q.ans, shuffledOpts, q.exp));
-    optWrap.appendChild(btn);
-  });
+  if (q.type === 'sa') {
+    optWrap.style.display = 'none';
+    saArea.style.display = 'flex';
+    const saInput = document.getElementById('sa-input');
+    saInput.value = '';
+    saInput.className = 'sa-input';
+    saInput.disabled = false;
+    document.getElementById('sa-submit-btn').disabled = false;
+    document.getElementById('sa-result').style.display = 'none';
+    setTimeout(() => saInput.focus(), 80);
+  } else {
+    optWrap.style.display = 'flex';
+    saArea.style.display = 'none';
+    const letters = ['A','B','C','D'];
+    optWrap.innerHTML = '';
+    const shuffledOpts = shuffle(q.opts.map((text, i) => ({ text, orig: i })));
+    shuffledOpts.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt';
+      btn.dataset.orig = opt.orig;
+      btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span>${opt.text}</span>`;
+      btn.addEventListener('click', () => handleAnswer(btn, opt.orig, q.ans, shuffledOpts, q.exp));
+      optWrap.appendChild(btn);
+    });
+  }
 
   // reset feedback
   document.getElementById('exp-box').classList.remove('show');
@@ -2213,41 +2452,9 @@ function handleAnswer(clickedBtn, chosenOrig, correctOrig, shuffledOpts, exp) {
   });
 
   const correct = chosenOrig === correctOrig;
-  if (correct) {
-    state.score++;
-    state.streak++;
-    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
-    recordAnswer(state.deck[state.idx].cat, true);
-    removeWrong(state.deck[state.idx]);
-  } else {
-    state.streak = 0;
-    recordAnswer(state.deck[state.idx].cat, false);
-    addWrong(state.deck[state.idx]);
-  }
-  state.recentAnswers.push(correct);
-  evaluateAdaptive();
-
-  // update streak display
-  const streakEl = document.getElementById('streak-display');
-  if (state.streak >= 2) {
-    streakEl.style.display = 'flex';
-    document.getElementById('streak-num').textContent = state.streak;
-    streakEl.classList.remove('pop');
-    void streakEl.offsetWidth;
-    streakEl.classList.add('pop');
-  } else {
-    streakEl.style.display = 'none';
-  }
-
   if (!correct) clickedBtn.classList.add('wrong');
-
-  document.getElementById('live-score').textContent = state.score;
   document.getElementById('exp-text').textContent = exp;
-  document.getElementById('exp-box').classList.add('show');
-
-  const nextBtn = document.getElementById('next-btn');
-  nextBtn.textContent = state.idx < state.deck.length - 1 ? 'Next question →' : 'See results →';
-  nextBtn.classList.add('show');
+  applyResult(correct);
 }
 
 function nextQuestion() {

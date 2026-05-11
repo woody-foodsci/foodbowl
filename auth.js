@@ -15,6 +15,8 @@ async function initAuth() {
 function handleUser(user) {
   currentUser = user;
   renderAuthBar();
+  const btn = document.getElementById('submit-question-btn');
+  if (btn) btn.style.display = user ? 'block' : 'none';
 }
 
 function renderAuthBar() {

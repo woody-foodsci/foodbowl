@@ -833,6 +833,120 @@
     padding: 0;
   }
   #auth-toggle-btn:hover { color: var(--accent); }
+
+  /* ── submit screen ── */
+  #submit { padding: 0; }
+
+  .submit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .submit-title {
+    font-family: var(--font-d);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .submit-form-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem 2rem;
+  }
+
+  .submit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .sub-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .sub-cat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.4rem;
+  }
+
+  .sub-textarea {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-m);
+    font-size: 0.85rem;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  .sub-textarea::placeholder { color: var(--muted); }
+  .sub-textarea:focus { border-color: var(--accent); }
+
+  .sub-opts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .sub-opt-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .sub-opt-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-m);
+    font-size: 0.8rem;
+    color: var(--accent);
+    white-space: nowrap;
+    cursor: pointer;
+    min-width: 2.2rem;
+  }
+
+  .sub-opt-label input[type="radio"] { accent-color: var(--accent); }
+
+  .sub-opt-input {
+    flex: 1;
+    padding: 0.6rem 0.85rem !important;
+    font-size: 0.82rem !important;
+  }
+
+  .sub-error {
+    font-size: 0.75rem;
+    color: var(--danger);
+    min-height: 1em;
+  }
+
+  .sub-success {
+    font-size: 0.8rem;
+    color: var(--accent);
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: #0d1f18;
+  }
+
+  .sub-submit-btn {
+    animation: none !important;
+    opacity: 1 !important;
+  }
 </style>
 </head>
 <body>
@@ -926,6 +1040,7 @@
     </div>
 
     <button class="review-btn" id="review-btn" style="display:none">Review Missed →</button>
+    <button class="review-btn" id="submit-question-btn" style="display:none;border-color:var(--accent);color:var(--accent)">Submit Question →</button>
     <button class="start-btn" id="start-btn">Start Quiz →</button>
   </section>
 
@@ -1005,6 +1120,94 @@
 
 </div>
 
+  <!-- ── SUBMIT ── -->
+  <section class="screen" id="submit">
+    <div class="submit-header">
+      <button class="quit-btn" id="submit-back-btn">← Back</button>
+      <div class="submit-title">Submit Question</div>
+      <div style="width:64px"></div>
+    </div>
+    <div class="submit-form-scroll" id="submit-form-scroll">
+      <div class="submit-form">
+
+        <div class="sub-section">
+          <div class="timer-label">Category</div>
+          <div class="sub-cat-grid" id="sub-cat-opts">
+            <button class="timer-btn selected" data-cat="chemistry">Chemistry</button>
+            <button class="timer-btn" data-cat="microbiology">Microbiology</button>
+            <button class="timer-btn" data-cat="processing">Processing</button>
+            <button class="timer-btn" data-cat="regulations">Regulations</button>
+            <button class="timer-btn" data-cat="sensory">Sensory</button>
+            <button class="timer-btn" data-cat="nutrition">Nutrition</button>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="timer-label">Type</div>
+          <div class="timer-opts" id="sub-type-opts">
+            <button class="timer-btn selected" data-qtype="mcq">MCQ</button>
+            <button class="timer-btn" data-qtype="sa">Short Answer</button>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="timer-label">Difficulty</div>
+          <div class="timer-opts" id="sub-diff-opts">
+            <button class="timer-btn" data-diff="1">Easy</button>
+            <button class="timer-btn selected" data-diff="2">Medium</button>
+            <button class="timer-btn" data-diff="3">Hard</button>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="timer-label">Question</div>
+          <textarea id="sub-q" class="sub-textarea" placeholder="Enter the question text…"></textarea>
+        </div>
+
+        <div id="sub-mcq-area">
+          <div class="sub-section">
+            <div class="timer-label">Answer options — select the correct one</div>
+            <div class="sub-opts-list">
+              <div class="sub-opt-row">
+                <label class="sub-opt-label"><input type="radio" name="sub-ans" value="0" checked> A</label>
+                <input type="text" id="sub-opt-0" class="sa-input sub-opt-input" placeholder="Option A">
+              </div>
+              <div class="sub-opt-row">
+                <label class="sub-opt-label"><input type="radio" name="sub-ans" value="1"> B</label>
+                <input type="text" id="sub-opt-1" class="sa-input sub-opt-input" placeholder="Option B">
+              </div>
+              <div class="sub-opt-row">
+                <label class="sub-opt-label"><input type="radio" name="sub-ans" value="2"> C</label>
+                <input type="text" id="sub-opt-2" class="sa-input sub-opt-input" placeholder="Option C">
+              </div>
+              <div class="sub-opt-row">
+                <label class="sub-opt-label"><input type="radio" name="sub-ans" value="3"> D</label>
+                <input type="text" id="sub-opt-3" class="sa-input sub-opt-input" placeholder="Option D">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="sub-sa-area" style="display:none">
+          <div class="sub-section">
+            <div class="timer-label">Accepted answers (comma-separated)</div>
+            <input type="text" id="sub-sa-answers" class="sa-input" placeholder="e.g. Maillard reaction, maillard, browning">
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="timer-label">Explanation</div>
+          <textarea id="sub-exp" class="sub-textarea" placeholder="Explain the correct answer…"></textarea>
+        </div>
+
+        <div id="sub-error" class="sub-error"></div>
+        <div id="sub-success" class="sub-success" style="display:none">✓ Submitted! It will be reviewed before publishing.</div>
+        <button class="start-btn sub-submit-btn" id="sub-submit-btn">Submit →</button>
+
+      </div>
+    </div>
+  </section>
+
 <!-- install banner -->
 <div id="install-banner">
   <div class="install-text">
@@ -1032,5 +1235,6 @@
 <script src="questions.js"></script>
 <script src="auth.js"></script>
 <script src="app.js"></script>
+<script src="submit.js"></script>
 </body>
 </html>

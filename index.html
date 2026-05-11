@@ -523,6 +523,7 @@
     transition: border-color 0.15s, color 0.15s;
   }
   .res-btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .res-btn-ghost.copied { border-color: var(--accent); color: var(--accent); }
 
   /* tracking panel */
   .tracking-panel {
@@ -896,6 +897,7 @@
 
     <div class="res-btns">
       <button class="res-btn-primary" id="retry-btn">Play again →</button>
+      <button class="res-btn-ghost" id="copy-result-btn">Copy result</button>
       <button class="res-btn-ghost" id="home-btn">← Change category</button>
       <button class="res-btn-ghost" id="clear-tracking-btn">Reset tracking data</button>
     </div>
@@ -2079,6 +2081,7 @@ function init() {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     state.category = btn.dataset.cat;
+    saveSettings();
   });
 
   document.getElementById('start-btn').addEventListener('click', startQuiz);
@@ -2097,6 +2100,7 @@ function init() {
       document.querySelectorAll('#timer-select .timer-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       state.timerSec = parseInt(btn.dataset.sec);
+      saveSettings();
     });
   });
 
@@ -2106,6 +2110,7 @@ function init() {
       document.querySelectorAll('#type-select .timer-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       state.qType = btn.dataset.qtype;
+      saveSettings();
     });
   });
 
@@ -2121,6 +2126,7 @@ function init() {
       document.querySelectorAll('#count-select .timer-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       state.qCount = parseInt(btn.dataset.count);
+      saveSettings();
     });
   });
 
@@ -2130,12 +2136,47 @@ function init() {
       document.querySelectorAll('#diff-select .timer-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       state.difficulty = btn.dataset.diff;
+      saveSettings();
     });
   });
 
   // review mode button
   document.getElementById('review-btn').addEventListener('click', startReviewMode);
 
+  // copy result button
+  document.getElementById('copy-result-btn').addEventListener('click', () => {
+    const btn = document.getElementById('copy-result-btn');
+    navigator.clipboard.writeText(state._copyText || '').then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy result'; btn.classList.remove('copied'); }, 1800);
+    }).catch(() => {});
+  });
+
+  // keyboard shortcuts (quiz screen only)
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('quiz').classList.contains('active')) return;
+    const focused = document.activeElement;
+    const inInput = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA');
+    const key = e.key.toUpperCase();
+
+    // A/B/C/D → click MCQ option (not when typing in SA input)
+    if (['A','B','C','D'].includes(key) && !inInput && !state.answered) {
+      const opts = document.querySelectorAll('.opt');
+      const idx = ['A','B','C','D'].indexOf(key);
+      if (opts[idx] && !opts[idx].disabled) { e.preventDefault(); opts[idx].click(); }
+      return;
+    }
+
+    // Space → next question / results (not when typing in SA input)
+    if (e.key === ' ' && !inInput) {
+      const nextBtn = document.getElementById('next-btn');
+      if (nextBtn.classList.contains('show')) { e.preventDefault(); nextBtn.click(); }
+      return;
+    }
+  });
+
+  applySavedSettings();
   updateReviewBtn();
 }
 
@@ -2473,6 +2514,12 @@ function showResult() {
   document.getElementById('res-score').textContent = state.score;
   document.getElementById('res-denom').textContent = `out of ${total} correct · ${pct}% · best streak ${state.bestStreak}🔥`;
 
+  // build clipboard copy string
+  const catLabel = state.category === 'all' ? 'All Categories' : CAT_LABELS[state.category] || state.category;
+  state._copyText = `${catLabel} · ${state.score}/${total} (${pct}%)` +
+    (state.bestStreak >= 2 ? ` 🔥${state.bestStreak} streak` : '') +
+    ` — Food Science Bowl`;
+
   let msg, sub;
   if (pct === 100) {
     msg = "Perfect score. Bowl-ready.";
@@ -2536,6 +2583,10 @@ function showResult() {
     void el.offsetWidth;
     el.style.animation = '';
   });
+
+  const copyBtn = document.getElementById('copy-result-btn');
+  copyBtn.textContent = 'Copy result';
+  copyBtn.classList.remove('copied');
 
   show('result');
 }
@@ -2601,6 +2652,60 @@ function startReviewMode() {
   state.recentAnswers = [];
   show('quiz');
   renderQuestion();
+}
+
+// ══════════════════════════════════════════
+//  SETTINGS PERSISTENCE (localStorage)
+// ══════════════════════════════════════════
+const SETTINGS_KEY = 'foodbowl_settings';
+
+function saveSettings() {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      category: state.category,
+      timerSec: state.timerSec,
+      qType:    state.qType,
+      qCount:   state.qCount,
+      difficulty: state.difficulty
+    }));
+  } catch {}
+}
+
+function applySavedSettings() {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); } catch {}
+  if (!saved) return;
+
+  if (saved.category) {
+    state.category = saved.category;
+    document.querySelectorAll('.cat-btn').forEach(b => {
+      b.classList.toggle('selected', b.dataset.cat === saved.category);
+    });
+  }
+  if (saved.timerSec !== undefined) {
+    state.timerSec = saved.timerSec;
+    document.querySelectorAll('#timer-select .timer-btn').forEach(b => {
+      b.classList.toggle('selected', parseInt(b.dataset.sec) === saved.timerSec);
+    });
+  }
+  if (saved.qType) {
+    state.qType = saved.qType;
+    document.querySelectorAll('#type-select .timer-btn').forEach(b => {
+      b.classList.toggle('selected', b.dataset.qtype === saved.qType);
+    });
+  }
+  if (saved.qCount !== undefined) {
+    state.qCount = saved.qCount;
+    document.querySelectorAll('#count-select .timer-btn').forEach(b => {
+      b.classList.toggle('selected', parseInt(b.dataset.count) === saved.qCount);
+    });
+  }
+  if (saved.difficulty) {
+    state.difficulty = saved.difficulty;
+    document.querySelectorAll('#diff-select .timer-btn').forEach(b => {
+      b.classList.toggle('selected', b.dataset.diff === saved.difficulty);
+    });
+  }
 }
 
 // ══════════════════════════════════════════

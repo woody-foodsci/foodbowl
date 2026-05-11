@@ -947,6 +947,60 @@
     animation: none !important;
     opacity: 1 !important;
   }
+
+  /* ── submit tabs ── */
+  .submit-tabs {
+    display: flex;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .submit-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.7rem 1.25rem;
+    font-family: var(--font-m);
+    font-size: 0.8rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+  }
+  .submit-tab:hover { color: var(--text); }
+  .submit-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── bulk upload ── */
+  .sub-upload-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: var(--font-m);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    text-align: center;
+  }
+  .sub-upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .sub-bulk-error {
+    font-size: 0.72rem;
+    color: var(--danger);
+    line-height: 1.7;
+  }
+
+  .sub-preview-info {
+    font-size: 0.8rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  /* remove border-bottom from submit-header since tabs handle it */
+  .submit-header { border-bottom: none; }
 </style>
 </head>
 <body>
@@ -1127,82 +1181,127 @@
       <div class="submit-title">Submit Question</div>
       <div style="width:64px"></div>
     </div>
+    <div class="submit-tabs">
+      <button class="submit-tab active" data-tab="single">Single</button>
+      <button class="submit-tab" data-tab="bulk">Bulk Upload</button>
+    </div>
     <div class="submit-form-scroll" id="submit-form-scroll">
       <div class="submit-form">
 
-        <div class="sub-section">
-          <div class="timer-label">Category</div>
-          <div class="sub-cat-grid" id="sub-cat-opts">
-            <button class="timer-btn selected" data-cat="chemistry">Chemistry</button>
-            <button class="timer-btn" data-cat="microbiology">Microbiology</button>
-            <button class="timer-btn" data-cat="processing">Processing</button>
-            <button class="timer-btn" data-cat="regulations">Regulations</button>
-            <button class="timer-btn" data-cat="sensory">Sensory</button>
-            <button class="timer-btn" data-cat="nutrition">Nutrition</button>
-          </div>
-        </div>
+        <!-- ── SINGLE PANEL ── -->
+        <div id="sub-single-panel">
 
-        <div class="sub-section">
-          <div class="timer-label">Type</div>
-          <div class="timer-opts" id="sub-type-opts">
-            <button class="timer-btn selected" data-qtype="mcq">MCQ</button>
-            <button class="timer-btn" data-qtype="sa">Short Answer</button>
-          </div>
-        </div>
-
-        <div class="sub-section">
-          <div class="timer-label">Difficulty</div>
-          <div class="timer-opts" id="sub-diff-opts">
-            <button class="timer-btn" data-diff="1">Easy</button>
-            <button class="timer-btn selected" data-diff="2">Medium</button>
-            <button class="timer-btn" data-diff="3">Hard</button>
-          </div>
-        </div>
-
-        <div class="sub-section">
-          <div class="timer-label">Question</div>
-          <textarea id="sub-q" class="sub-textarea" placeholder="Enter the question text…"></textarea>
-        </div>
-
-        <div id="sub-mcq-area">
           <div class="sub-section">
-            <div class="timer-label">Answer options — select the correct one</div>
-            <div class="sub-opts-list">
-              <div class="sub-opt-row">
-                <label class="sub-opt-label"><input type="radio" name="sub-ans" value="0" checked> A</label>
-                <input type="text" id="sub-opt-0" class="sa-input sub-opt-input" placeholder="Option A">
-              </div>
-              <div class="sub-opt-row">
-                <label class="sub-opt-label"><input type="radio" name="sub-ans" value="1"> B</label>
-                <input type="text" id="sub-opt-1" class="sa-input sub-opt-input" placeholder="Option B">
-              </div>
-              <div class="sub-opt-row">
-                <label class="sub-opt-label"><input type="radio" name="sub-ans" value="2"> C</label>
-                <input type="text" id="sub-opt-2" class="sa-input sub-opt-input" placeholder="Option C">
-              </div>
-              <div class="sub-opt-row">
-                <label class="sub-opt-label"><input type="radio" name="sub-ans" value="3"> D</label>
-                <input type="text" id="sub-opt-3" class="sa-input sub-opt-input" placeholder="Option D">
+            <div class="timer-label">Category</div>
+            <div class="sub-cat-grid" id="sub-cat-opts">
+              <button class="timer-btn selected" data-cat="chemistry">Chemistry</button>
+              <button class="timer-btn" data-cat="microbiology">Microbiology</button>
+              <button class="timer-btn" data-cat="processing">Processing</button>
+              <button class="timer-btn" data-cat="regulations">Regulations</button>
+              <button class="timer-btn" data-cat="sensory">Sensory</button>
+              <button class="timer-btn" data-cat="nutrition">Nutrition</button>
+            </div>
+          </div>
+
+          <div class="sub-section">
+            <div class="timer-label">Type</div>
+            <div class="timer-opts" id="sub-type-opts">
+              <button class="timer-btn selected" data-qtype="mcq">MCQ</button>
+              <button class="timer-btn" data-qtype="sa">Short Answer</button>
+            </div>
+          </div>
+
+          <div class="sub-section">
+            <div class="timer-label">Difficulty</div>
+            <div class="timer-opts" id="sub-diff-opts">
+              <button class="timer-btn" data-diff="1">Easy</button>
+              <button class="timer-btn selected" data-diff="2">Medium</button>
+              <button class="timer-btn" data-diff="3">Hard</button>
+            </div>
+          </div>
+
+          <div class="sub-section">
+            <div class="timer-label">Visibility</div>
+            <div class="timer-opts" id="sub-vis-opts">
+              <button class="timer-btn selected" data-vis="public">Public</button>
+              <button class="timer-btn" data-vis="private">Private</button>
+            </div>
+          </div>
+
+          <div class="sub-section">
+            <div class="timer-label">Question</div>
+            <textarea id="sub-q" class="sub-textarea" placeholder="Enter the question text…"></textarea>
+          </div>
+
+          <div id="sub-mcq-area">
+            <div class="sub-section">
+              <div class="timer-label">Answer options — select the correct one</div>
+              <div class="sub-opts-list">
+                <div class="sub-opt-row">
+                  <label class="sub-opt-label"><input type="radio" name="sub-ans" value="0" checked> A</label>
+                  <input type="text" id="sub-opt-0" class="sa-input sub-opt-input" placeholder="Option A">
+                </div>
+                <div class="sub-opt-row">
+                  <label class="sub-opt-label"><input type="radio" name="sub-ans" value="1"> B</label>
+                  <input type="text" id="sub-opt-1" class="sa-input sub-opt-input" placeholder="Option B">
+                </div>
+                <div class="sub-opt-row">
+                  <label class="sub-opt-label"><input type="radio" name="sub-ans" value="2"> C</label>
+                  <input type="text" id="sub-opt-2" class="sa-input sub-opt-input" placeholder="Option C">
+                </div>
+                <div class="sub-opt-row">
+                  <label class="sub-opt-label"><input type="radio" name="sub-ans" value="3"> D</label>
+                  <input type="text" id="sub-opt-3" class="sa-input sub-opt-input" placeholder="Option D">
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div id="sub-sa-area" style="display:none">
-          <div class="sub-section">
-            <div class="timer-label">Accepted answers (comma-separated)</div>
-            <input type="text" id="sub-sa-answers" class="sa-input" placeholder="e.g. Maillard reaction, maillard, browning">
+          <div id="sub-sa-area" style="display:none">
+            <div class="sub-section">
+              <div class="timer-label">Accepted answers (comma-separated)</div>
+              <input type="text" id="sub-sa-answers" class="sa-input" placeholder="e.g. Maillard reaction, maillard, browning">
+            </div>
           </div>
+
+          <div class="sub-section">
+            <div class="timer-label">Explanation</div>
+            <textarea id="sub-exp" class="sub-textarea" placeholder="Explain the correct answer…"></textarea>
+          </div>
+
+          <div id="sub-error" class="sub-error"></div>
+          <div id="sub-success" class="sub-success" style="display:none">✓ Submitted! It will be reviewed before publishing.</div>
+          <button class="start-btn sub-submit-btn" id="sub-submit-btn">Submit →</button>
+
         </div>
 
-        <div class="sub-section">
-          <div class="timer-label">Explanation</div>
-          <textarea id="sub-exp" class="sub-textarea" placeholder="Explain the correct answer…"></textarea>
-        </div>
+        <!-- ── BULK PANEL ── -->
+        <div id="sub-bulk-panel" style="display:none">
 
-        <div id="sub-error" class="sub-error"></div>
-        <div id="sub-success" class="sub-success" style="display:none">✓ Submitted! It will be reviewed before publishing.</div>
-        <button class="start-btn sub-submit-btn" id="sub-submit-btn">Submit →</button>
+          <div class="sub-section">
+            <div class="timer-label">1. Download template</div>
+            <button class="sub-upload-btn" id="sub-download-template">⬇ Download CSV Template</button>
+            <div style="font-size:0.7rem;color:var(--muted)">Fill in Excel or Google Sheets, save as CSV. Use | (pipe) to separate SA answers.</div>
+          </div>
+
+          <div class="sub-section">
+            <div class="timer-label">2. Upload filled CSV</div>
+            <button class="sub-upload-btn" id="sub-upload-btn">📂 Choose CSV file</button>
+            <input type="file" id="sub-csv-file" accept=".csv" style="display:none">
+            <div id="sub-file-name" style="font-size:0.75rem;color:var(--muted)"></div>
+          </div>
+
+          <div id="sub-preview" style="display:none">
+            <div class="sub-section">
+              <div id="sub-preview-info" class="sub-preview-info"></div>
+              <div id="sub-bulk-error" class="sub-bulk-error"></div>
+              <button class="start-btn sub-submit-btn" id="sub-bulk-submit-btn" style="display:none">Submit →</button>
+            </div>
+          </div>
+
+          <div id="sub-bulk-success" class="sub-success" style="display:none">✓ All questions submitted! They will be reviewed before publishing.</div>
+
+        </div>
 
       </div>
     </div>

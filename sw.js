@@ -1,5 +1,5 @@
-const CACHE = 'foodbowl-v1';
-const ASSETS = ['./index.html', './manifest.json'];
+const CACHE = 'foodbowl-v2';
+const ASSETS = ['./index.html', './questions.js', './manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));

@@ -18,13 +18,14 @@ UGA食品科学博士課程学生（ポスドクでUWに移籍予定）が個人
 
 ```
 foodbowl/
-├── index.html      ← アプリ本体（全HTML/CSS/JS/問題データが集約）
+├── index.html      ← アプリ本体（HTML/CSS/JS）
+├── questions.js    ← 問題データ（QUESTIONS配列・DIFFICULTIES配列）
 ├── sw.js           ← Service Worker（オフライン対応）
 ├── manifest.json   ← PWAマニフェスト
-└── HANDOFF.md      ← このファイル（gitで管理、未コミット）
+└── HANDOFF.md      ← このファイル
 ```
 
-**重要：** フェーズ4（Supabase導入）まで index.html 1ファイル原則を維持する。
+**重要：** フェーズ4（Supabase導入）で questions.js をDBに移行する。それまでは questions.js に問題を追加していく。
 
 ---
 
@@ -242,7 +243,7 @@ let state = {
 2. **localStorage：** 新データは必ず新キーを使う（既存4キーは触らない）
 3. **SA問題の diff：** 問題オブジェクト内に直書き（DIFFICULTIES配列は143個でSA分がない）
 4. **MCQ問題の diff：** DIFFICULTIES配列で一括管理（インデックス順に対応）
-5. **sw.js キャッシュ：** ファイル構成変更時は `foodbowl-v1` のバージョンを上げる
+5. **sw.js キャッシュ：** 現在 `foodbowl-v2`。ファイル構成変更時はバージョンを上げる
 6. **GitHub Pages：** SSH経由でpush（`git push origin main`）、1〜2分で反映
 
 ---

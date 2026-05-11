@@ -2001,7 +2001,7 @@ const DIFFICULTIES = [
   2, 1, 1, 2, 1, 2, 1, 2, 3, 2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1
 ];
 QUESTIONS.forEach((q, i) => {
-  q.diff = DIFFICULTIES[i] || 2;
+  q.diff = q.diff || DIFFICULTIES[i] || 2;
   if (!q.type) q.type = 'mcq';
 });
 
